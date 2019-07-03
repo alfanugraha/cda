@@ -56,3 +56,4 @@ individu_func_capacity<-data.frame(
 cda_system <- read.table("init/system.csv", header = TRUE, sep = ",")
 cda_organisation <- read.table("init/organisation.csv", header = TRUE, sep = ",")
 cda_individu <- read.table("init/individu.csv", header = TRUE, sep = ",")
+
