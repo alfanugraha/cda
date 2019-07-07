@@ -1,6 +1,7 @@
 ###*initiate library####
 library(shiny)
 library(shinydashboard)
+library(plotly)
 
 source("functional_capacity.R")
 
@@ -37,11 +38,11 @@ loadData <- function() {
 
 
 ###*setup dashboard page####
-source('interface.R')
+ui <- source('interface.R')
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-  tablesCDA <- reactiveValues(tableSystem=data.frame(), tableOrganisation=data.frame(), tableIndividu=data.frame())
+  tablesCDA <- reactiveValues(tableSystem=data.frame(), tableOrganisation=data.frame(), tableIndividu=data.frame(), summary=data.frame())
   
   formSystem <- reactive({
     data <- sapply(fieldsSystem, function(x) input[[x]])
@@ -69,7 +70,7 @@ server <- function(input, output, session) {
     # regulasi
     regulasi <- mean(c(tblSystem[1, 1], tblSystem[1, 2]))
     # integrasi dlm perencanaan pembangunan daerah
-    integrasi <- mean(c(tblSystem[1, 3], tblSystem[1, 4], tblSystem[1, 5], tblSystem[1, 6], mean(tblSystem[1, 7], tblSystem[1, 8]) ))
+    integrasi <- mean(c(tblSystem[1, 3], tblSystem[1, 4], tblSystem[1, 5], tblSystem[1, 6], mean(c(tblSystem[1, 7], tblSystem[1, 8])) ))
     # proses
     proses <- mean(c(unlist(tblSystem[1, 9:13])))
     # organisasi
@@ -91,7 +92,14 @@ server <- function(input, output, session) {
     gap <- c(5, 5, 5, 5, 5, 5, 5)
 
     summary <- data.frame(SUMMARY=desc, LEVEL=level, GAP=gap)
+    tablesCDA$summary <- summary
     summary
+  })
+  
+  output$rateChart <- renderPlotly({
+    plot_ly(tablesCDA$summary, x=~SUMMARY, y=~LEVEL, type='bar', name='LEVEL') %>%
+      add_trace(y=~GAP, name='GAP') %>%
+      layout(yaxis = list(title='VALUE'), barmode='stack')
   })
   
   # Append data
@@ -114,6 +122,7 @@ server <- function(input, output, session) {
   observeEvent(input$exportInd, {
     saveData(tablesCDA$tableIndividu)
   })
+  
 }
 
 ###*run the apps#### 
