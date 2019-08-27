@@ -1,6 +1,8 @@
-###*initiate library####
+###*initiate library##
 library(shiny)
 library(shinydashboard)
+library(shinyLP)
+library(shinyjs)
 library(plotly)
 
 source("functional_capacity.R")
@@ -36,7 +38,6 @@ loadData <- function() {
   data
 }
 
-
 ###*setup dashboard page####
 ui <- source('interface.R')
 
@@ -60,6 +61,11 @@ server <- function(input, output, session) {
     data <- sapply(fieldsIndividu, function(x) input[[x]])
     data <- t(data)
     data
+  })
+  
+  output$tabelSys <- renderDataTable({
+    tblSystem <- tablesCDA$tableSystem
+    tblSystem
   })
   
   output$rateTbl <- renderDataTable({
@@ -89,7 +95,8 @@ server <- function(input, output, session) {
                   ))
 
     level <- c(regulasi, integrasi, proses, organisasi, sdm, informasi, pep)
-    gap <- c(5, 5, 5, 5, 5, 5, 5)
+    gap <- 5-level
+    
 
     summary <- data.frame(SUMMARY=desc, LEVEL=level, GAP=gap)
     tablesCDA$summary <- summary
@@ -121,6 +128,21 @@ server <- function(input, output, session) {
   # Export data
   observeEvent(input$exportInd, {
     saveData(tablesCDA$tableIndividu)
+  })
+ 
+  ##Mandatory field 
+  observe({
+    # check if all mandatory fields have a value
+    mandatoryFilled <-
+      vapply(fieldsMandatory,
+             function(x) {
+               !is.null(input[[x]]) && input[[x]] != ""
+             },
+             logical(1))
+    mandatoryFilled <- all(mandatoryFilled)
+    
+    # enable/disable the submit button
+    shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
   })
   
 }
