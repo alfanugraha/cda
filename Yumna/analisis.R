@@ -31,3 +31,5 @@ individu <- read.delim("clipboard", header=TRUE)
 plot_ly(individu, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
   add_trace(x=~Gap, name= 'Gap') %>%
   layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
+
+
