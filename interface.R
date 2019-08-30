@@ -41,6 +41,7 @@ dashboardPage(
       #          menuSubItem(tabname = "Organisasi"),
       #          menuSubItem(tabName =  "Individu")),
       menuItem("Sistem",  #icon = icon("history"), 
+        menuSubItem("hasil tabel", tabName = "resTbl"),
         menuSubItem(system_func_capacity$func_capacity[1], tabName = "sys11"),
         menuSubItem(system_func_capacity$func_capacity[2], tabName = "sys12"),
         menuSubItem(system_func_capacity$func_capacity[3], tabName = "sys21"),
@@ -103,14 +104,17 @@ dashboardPage(
   body = dashboardBody(
     tabItems(
       ###*tab-home####
-      tabItem(tabName = "home", jumbotron(img(src="ps3.png"), " ", button=FALSE), jumbotron(img(src="tingkatan.png"), " ", button=FALSE)
+      # tabItem(tabName = "home", jumbotron(img(src="ps3.png"), " ", button=FALSE), jumbotron(img(src="tingkatan.png"), " ", button=FALSE)
               # hr(),
               # fluidRow(
               #   column(10, thumbnail_label(image='tingkatan.png', label='CDNA',
               #                             content = 'CDNA memiliki 3 tingkatan yaitu Sistem, Organisasi dan Individu',
               #                             button_link='#shiny-tab-pageOne',button_label = 'OK'))
               #   )
-              ),
+              # ),
+      tabItem(tabName = "home",
+          leafletOutput("koboMap")
+      ),
       ###*tab-profil
 
       tabItem(tabName = "profil",
@@ -134,6 +138,10 @@ dashboardPage(
       #         selectInput("perwakilan", "Saya akan mengisi kuesioner ini sebagai perwakilan dari ", choices=c('Pemerintah Provinsi','OPD')),
       #         textInput("opd", "Nama OPD (jika memilih OPD)", value="", width=NULL, placeholder="")
       # ),
+      tabItem(tabName = "resTbl",
+        dataTableOutput("resTblSys"),
+        plotlyOutput("resChartSys")
+      ),
       tabItem(tabName = "sys11",
         selectInput("perwakilan", "Saya akan mengisi kuesioner ini sebagai perwakilan dari ", choices=c('Pemerintah Provinsi','OPD')),
         textInput("opd", "Nama OPD (jika memilih OPD)", value="", width=NULL, placeholder=""),

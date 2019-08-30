@@ -5,6 +5,11 @@ library(shinyLP)
 library(shinyjs)
 library(plotly)
 
+library(leaflet)
+library(readxl)
+library(dplyr)
+
+
 source("functional_capacity.R")
 
 outputDir <- "responses"
@@ -43,7 +48,9 @@ ui <- source('interface.R')
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-  tablesCDA <- reactiveValues(tableSystem=data.frame(), tableOrganisation=data.frame(), tableIndividu=data.frame(), summary=data.frame())
+  tablesCDA <- reactiveValues(tableSystem=data.frame(), tableOrganisation=data.frame(), tableIndividu=data.frame(), summary=data.frame(),
+                              summarySystem=data.frame()
+                              )
   
   formSystem <- reactive({
     data <- sapply(fieldsSystem, function(x) input[[x]])
@@ -61,6 +68,146 @@ server <- function(input, output, session) {
     data <- sapply(fieldsIndividu, function(x) input[[x]])
     data <- t(data)
     data
+  })
+  
+  output$resTblSys <- renderDataTable({
+    inputResp<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
+
+    inputResp$intro1<-NULL
+    inputResp$acknowledge1<-NULL
+    inputResp$introSistem<-NULL
+    inputResp$inroRegulasi<-NULL
+    inputResp$introIntergrasi<-NULL
+    inputResp$introProses<-NULL
+    inputResp$introDataInfo<-NULL
+    inputResp$introPemantauan<-NULL
+    inputResp$introOrganisasi<-NULL
+    inputResp$introPerangkat<-NULL
+    inputResp$introSDM<-NULL
+    inputResp$introTeknologi<-NULL
+    inputResp$`_Terima_kasih_ata_nekan_tombol_berikut`<-NULL
+    
+    inputResp$alasan<-NULL
+    for (i in 1:9){
+      eval(parse(text=paste0("inputResp$alasan_00",i,"<-NULL")))
+    }
+    
+    for (i in 9:99){
+      eval(parse(text=paste0("inputResp$alasan_0",i,"<-NULL")))
+    }
+    
+    for (i in 100:110){
+      eval(parse(text=paste0("inputResp$alasan_",i,"<-NULL")))
+    }
+    
+    inputResp<-as.data.frame(inputResp)
+    
+    ###SISTEM###
+    # sistem<-unlist(inputResp[,11:76])
+    sistem<- as.data.frame(lapply(inputResp[,11:76], as.numeric))
+    
+    q2.5<-rowSums(sistem[,7:8])
+    q2.5<- as.data.frame(q2.5)/2
+    
+    q7.1 <- rowSums(sistem[,14:32])
+    q7.1<- as.data.frame(q7.1)/19
+    
+    q7.2 <- rowSums(sistem[,33:51])
+    q7.2<- as.data.frame(q7.2)/19
+    
+    q7.3<-rowSums(sistem[,52:53])
+    q7.3<-as.data.frame(q7.3)/2
+    
+    q9.1<-rowSums(sistem[,54:58])
+    q9.1<-as.data.frame(q9.1)/5
+    
+    q9.2<-rowSums(sistem[,59:63])
+    q9.2<-as.data.frame(q9.2)/5
+    
+    q9.3<-rowSums(sistem[,64:66])
+    q9.3<-as.data.frame(q9.3)/3
+    
+    levelSistem<-cbind(sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3)
+    colnames(levelSistem)<-c("q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3")
+    
+    gap_1.1<-5-levelSistem$q1.1
+    gap_1.2<-5-levelSistem$q1.2
+    gap_2.1<-5-levelSistem$q2.1
+    gap_2.2<-5-levelSistem$q2.2
+    gap_2.3<-5-levelSistem$q2.3
+    gap_2.4<-5-levelSistem$q2.4
+    gap_2.5<-5-levelSistem$q2.5
+    gap_3.1<-5-levelSistem$q3.1
+    gap_3.2<-5-levelSistem$q3.2
+    gap_3.3<-5-levelSistem$q3.3
+    gap_3.4<-5-levelSistem$q3.4
+    gap_3.5<-5-levelSistem$q3.5
+    gap_7.1<-5-levelSistem$q7.1
+    gap_7.2<-5-levelSistem$q7.2
+    gap_7.3<-5-levelSistem$q7.3
+    gap_9.1<-5-levelSistem$q9.1
+    gap_9.2<-5-levelSistem$q9.2
+    gap_9.3<-5-levelSistem$q9.3
+    valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
+    val_Sistem<-cbind(levelSistem,valGAP)
+    tempSistem<-as.data.frame(t(val_Sistem))
+    
+    indikatorSistem <- read.table("init/system.csv", header=TRUE, sep=",")
+    tes <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
+    colnames(tes)<-"Indikator"
+    result_Sistem <-cbind(tes,tempSistem)
+    
+    #Menampilkan hasil satu responden
+    i=1
+    #Hasil per Kapasistas Fungsional
+    result_Sistem[[i]]<-cbind(result_Sistem$Indikator,result_Sistem[i+1])
+    
+    #Hasil per BAB
+    Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+    LevelReg<-mean(tempSistem[1:2,i])
+    LevelInt<-mean(tempSistem[3:7,i])
+    LevelProses<-mean(tempSistem[8:12,i])
+    LevelData<-mean(tempSistem[13:15,i])
+    LevelPEP<-mean(tempSistem[16:18,i])
+    LevelSistem<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
+    gapReg<-mean(tempSistem[19:20,i])
+    gapInt<-mean(tempSistem[21:25,i])
+    gapProses<-mean(tempSistem[26:30,i])
+    gapData<-mean(tempSistem[31:33,i])
+    gapPEP<-mean(tempSistem[34:35,i])
+    GAPSistem<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
+    summSistem<-as.data.frame(cbind(Indikator_Penilaian, LevelSistem, GAPSistem))
+    colnames(summSistem)<-c("Aspek Penilaian","Level","GAP")
+    rownames(summSistem)<-c("1","2","3","4","5")
+    
+    ##BAR CHART
+    dataSistem<-as.data.frame(val_Sistem)
+    graphSistem<-cbind(tes,t((val_Sistem[i,1:18])),t(val_Sistem[i,19:36]))
+    colnames(graphSistem)<-c("Indikator","Level","GAP")
+    tablesCDA$summarySystem <- graphSistem
+    summSistem
+  })
+  
+  output$resChartSys <- renderPlotly({
+    graphSistem <- tablesCDA$summarySystem  
+    plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+      add_trace(x=~GAP, name= 'GAP') %>%
+      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
+  })
+  
+  output$koboMap <- renderLeaflet({
+    long_lat_data<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
+    long_lat_data$`_respgeopoint_latitude` <- as.numeric(long_lat_data$`_respgeopoint_latitude`)
+    long_lat_data$`_respgeopoint_longitude` <- as.numeric(long_lat_data$`_respgeopoint_longitude`)
+    kobo_data <- subset(long_lat_data, select=c(`_respgeopoint_latitude`, `_respgeopoint_longitude`, provinsi_001))
+    colnames(kobo_data) = c("lat", "long", "prov")
+    # leaflet(data = kobo_data) %>% addTiles() %>%
+    #   addMarkers(~`_respgeopoint_longitude`, ~`_respgeopoint_latitude`, popup = ~as.character(provinsi_001), label = ~as.character(provinsi_001)) 
+    # 
+    leaflet(data = kobo_data) %>% addTiles() %>% addMarkers(
+      clusterOptions = markerClusterOptions()
+    )
+
   })
   
   output$tabelSys <- renderDataTable({
