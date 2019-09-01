@@ -1,5 +1,6 @@
 ###*initiate library##
 library(shiny)
+library(shinythemes)
 library(shinydashboard)
 library(shinyLP)
 library(shinyjs)
@@ -9,70 +10,16 @@ library(leaflet)
 library(readxl)
 library(dplyr)
 
-
-source("functional_capacity.R")
-
-outputDir <- "responses"
-  
-# Which fields get saved
-fieldsSystem <- c("sys11q01","sys12q01","sys21q01","sys22q01","sys23q01","sys24q01","sys25q01","sys25q02","sys31q01","sys32q01","sys33q01","sys34q01","sys35q01",
-                "sys71q01","sys71q02","sys71q03","sys71q04","sys71q05","sys71q06","sys71q07","sys71q08","sys71q09","sys71q10","sys71q11","sys71q12","sys71q13","sys71q14","sys71q15","sys71q16","sys71q17","sys71q18","sys71q19",
-                "sys72q01","sys72q02","sys72q03","sys72q04","sys72q05","sys72q06","sys72q07","sys72q08","sys72q09","sys72q10","sys72q11","sys72q12","sys72q13","sys72q14","sys72q15","sys72q16","sys72q17","sys72q18","sys72q19",
-                "sys73q01","sys73q02","sys91q01","sys91q02","sys91q03","sys91q04","sys91q05","sys92q01","sys92q02","sys92q03","sys92q04","sys92q05","sys93q01","sys93q02","sys93q03")
-fieldsOrganisation <- c("org41q01","org41q02","org42q01","org42q02","org42q03","org43q01","org43q02","org44q01","org44q02","org44q03","org44q04",
-                      "org45q01","org45q02","org45q03","org46q01","org46q02","org47q01","org47q02","org47q03","org47q04","org47q05","org47q06",
-                      "org47q07","org51q01","org51q02","org51q03","org51q04","org51q05","org51q06","org51q07","org52q01","org53q01","org54q01",
-                      "org54q02","org55q01","org55q02","org81q01","org81q02","org81q03","org81q04","org82q01","org82q02","org82q03","org83q01","org83q02")
-fieldsIndividu <- c("ind61q01","ind61q02",
-                  "ind62q01","ind62q02","ind62q03","ind62q04","ind62q05","ind62q06","ind62q07","ind62q08","ind62q09",
-                  "ind63q01","ind63q02","ind63q03","ind63q04","ind63q05","ind63q06","ind63q07","ind63q08","ind63q09","ind64q01","ind64q02","ind64q03")
-
-saveData <- function(data) {
-  # Create a unique file name
-  fileName <- sprintf("%s_%s.csv", as.integer(Sys.time()), digest::digest(data))
-  # Write the file to the local system
-  write.csv(x = data, file = file.path(outputDir, fileName), row.names = FALSE)
-}
-
-loadData <- function() {
-  # Read all the files into a list
-  files <- list.files(outputDir, full.names = TRUE)
-  data <- lapply(files, read.csv, stringsAsFactors = FALSE) 
-  # Concatenate all data together into one data.frame
-  data <- do.call(rbind, data)
-  data
-}
-
 ###*setup dashboard page####
 ui <- source('interface.R')
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
-  tablesCDA <- reactiveValues(tableSystem=data.frame(), tableOrganisation=data.frame(), tableIndividu=data.frame(), summary=data.frame(),
-                              summarySystem=data.frame()
-                              )
-  
-  formSystem <- reactive({
-    data <- sapply(fieldsSystem, function(x) input[[x]])
-    data <- t(data)
-    data
-  })
-  
-  formOrganisation <- reactive({
-    data <- sapply(fieldsOrganisation, function(x) input[[x]])
-    data <- t(data)
-    data
-  })
-  
-  formIndividu <- reactive({
-    data <- sapply(fieldsIndividu, function(x) input[[x]])
-    data <- t(data)
-    data
-  })
+  tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame())
   
   output$resTblSys <- renderDataTable({
     inputResp<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
-
+    
     inputResp$intro1<-NULL
     inputResp$acknowledge1<-NULL
     inputResp$introSistem<-NULL
@@ -103,7 +50,6 @@ server <- function(input, output, session) {
     inputResp<-as.data.frame(inputResp)
     
     ###SISTEM###
-    # sistem<-unlist(inputResp[,11:76])
     sistem<- as.data.frame(lapply(inputResp[,11:76], as.numeric))
     
     q2.5<-rowSums(sistem[,7:8])
@@ -195,6 +141,235 @@ server <- function(input, output, session) {
       layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
   })
   
+  output$resTblOrg <- renderDataTable({
+    organisasi<- as.data.frame(lapply(inputResp[,77:121], as.numeric))
+    
+    q4.1<-rowSums(organisasi[,1:2])
+    q4.1<- as.data.frame(q4.1)/2
+    
+    q4.2<-rowSums(organisasi[,3:5])
+    q4.2<- as.data.frame(q4.2)/3
+    
+    q4.3<-rowSums(organisasi[,6:7])
+    q4.3<- as.data.frame(q4.3)/2
+    
+    q4.4<-rowSums(organisasi[,8:11])
+    q4.4<- as.data.frame(q4.4)/4
+    
+    q4.5<-rowSums(organisasi[,12:14])
+    q4.5<- as.data.frame(q4.5)/3
+    
+    q4.6<-rowSums(organisasi[,15:16])
+    q4.6<- as.data.frame(q4.6)/2
+    
+    q4.7<-rowSums(organisasi[,17:23])
+    q4.7<- as.data.frame(q4.7)/7
+    
+    q5.1<-rowSums(organisasi[,24:30])
+    q5.1<- as.data.frame(q5.1)/7
+    
+    q5.2<-organisasi$q5.2
+    q5.3<-organisasi$q5.3
+    
+    q5.4<-rowSums(organisasi[,33:34])
+    q5.4<- as.data.frame(q5.4)/2
+    
+    q5.5<-rowSums(organisasi[,35:36])
+    q5.5<- as.data.frame(q5.5)/2
+    
+    q8.1<-rowSums(organisasi[,37:40])
+    q8.1<- as.data.frame(q8.1)/4
+    
+    q8.2<-rowSums(organisasi[,41:43])
+    q8.2<- as.data.frame(q8.2)/3
+    
+    q8.3<-rowSums(organisasi[,44:45])
+    q8.3<- as.data.frame(q8.3)/2
+    
+    valOrganisasi <- cbind(q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    
+    gap4.1<-5-q4.1
+    gap4.2<-5-q4.2
+    gap4.3<-5-q4.3
+    gap4.4<-5-q4.4
+    gap4.5<-5-q4.5
+    gap4.6<-5-q4.6
+    gap4.7<-5-q4.7
+    gap5.1<-5-q5.1
+    gap5.2<-5-q5.2
+    gap5.3<-5-q5.3
+    gap5.4<-5-q5.4
+    gap5.5<-5-q5.5
+    gap8.1<-5-q8.1
+    gap8.2<-5-q8.2
+    gap8.3<-5-q8.3
+    valGAPorg<- cbind(gap4.1,gap4.2,gap4.3,gap4.4,gap4.5,gap4.6,gap4.7,gap5.1,gap5.2,gap5.3,gap5.4,gap5.5,gap8.1,gap8.2,gap8.3)
+    colnames(valGAPorg)<-c("gap4.1","gap4.2","gap4.3","gap4.4","gap4.5","gap4.6","gap4.7","gap5.1","gap5.2","gap5.3","gap5.4","gap5.5","gap8.1","gap8.2","gap8.3")
+    val_Organisasi<-cbind(valOrganisasi,valGAPorg)
+    tempOrganisasi<-as.data.frame(t(val_Organisasi))
+    
+    indikatorOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
+    tes2 <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
+    colnames(tes2)<-"Indikator"
+    result_Organisasi <-cbind(tes2,tempOrganisasi)
+    
+    #Menampilkan hasil satu responden
+    i=1
+    #Hasil per Kapasistas Fungsional
+    result_Organisasi[[i]]<-cbind(result_Organisasi$Indikator,result_Organisasi[i+1])
+    
+    #Hasil per BAB
+    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
+    LevelOrg<-mean(tempOrganisasi[1:7,i])
+    LevelSDM<-mean(tempOrganisasi[8:12,i])
+    LevelTek<-mean(tempOrganisasi[13:15,i])
+    LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
+    gapOrg<-mean(tempOrganisasi[16:22,i])
+    gapSDM<-mean(tempOrganisasi[23:27,i])
+    gapTek<-mean(tempOrganisasi[28:30,i])
+    gapOrg_gabungan<-as.data.frame(t(cbind(gapOrg,gapSDM,gapTek)))
+    summOrg<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
+    colnames(summOrg)<- c("Aspek Penilaian", "Level", "GAP")
+    rownames(summOrg)<- c("1","2","3")
+    
+    ##BAR CHART
+    dataOrg<-as.data.frame(val_Organisasi)
+    graphOrg<-cbind(tes2,t((val_Organisasi[i,1:15])),t(val_Organisasi[i,16:30]))
+    colnames(graphOrg)<-c("Indikator","Level","GAP")
+    tablesCDA$summaryOrg <- graphOrg
+    summOrg
+  })
+  
+  output$resChartOrg <- renderPlotly({
+    graphOrg <- tablesCDA$summaryOrg 
+    plot_ly(graphOrg, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+      add_trace(x=~GAP, name= 'GAP') %>%
+      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Organisasi") 
+  })
+  
+  output$resTblInd <- renderDataTable({
+    #Baca file excel dari KoBo
+    inputRespInd<-read_excel("data/CDNA_Individu.xlsx")
+    
+    inputRespInd$intro1<-NULL
+    inputRespInd$acknowledge1<-NULL
+    inputRespInd$introIndividu<-NULL
+    inputRespInd$introSDM2<-NULL
+    inputRespInd$`_Terimakasih_callr_nekan_tombol_berikut`<-NULL
+    inputRespInd$alasan<-NULL
+    for (i in 1:9){
+      eval(parse(text=paste0("inputRespInd$alasan_00",i,"<-NULL")))
+    }
+    
+    for (i in 10:22){
+      eval(parse(text=paste0("inputRespInd$alasan_0",i,"<-NULL")))
+    }
+    
+    inputRespInd<-as.data.frame(inputRespInd)
+    # valResp<-unlist(inputRespInd[,15:37])
+    valResp<- as.data.frame(lapply(inputRespInd[,15:37], as.numeric))
+    
+    Level6.1<-rowSums(valResp[,1:2])
+    Level6.1<-as.data.frame(Level6.1)/2
+    
+    Level6.2<-rowSums(valResp[,3:11])
+    Level6.2<-as.data.frame(Level6.2)/9
+    
+    Level6.3<-rowSums(valResp[,12:20])
+    Level6.3<-as.data.frame(Level6.3)/9
+    
+    Level6.4<-rowSums(valResp[,21:23])
+    Level6.4<-as.data.frame(Level6.4)/3
+    
+    valInd<-cbind(Level6.1,Level6.2,Level6.3,Level6.4)
+    
+    gap6.1<-5-Level6.1
+    gap6.2<-5-Level6.2
+    gap6.3<-5-Level6.3
+    gap6.4<-5-Level6.4
+    valGAPind<-cbind(gap6.1,gap6.2,gap6.3,gap6.4)
+    colnames(valGAPind)<-c("gap6.1","gap6.2","gap6.3","gap6.4")
+    val_Individu <- cbind(valInd,valGAPind)
+    individu<-as.data.frame(t(val_Individu))
+    
+    Indikator <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
+    Indikator  <- as.data.frame(Indikator)
+    # colnames(Indikator)<-"Indikator Penilaian"
+    result_Individu<-cbind(Indikator,individu)
+    
+    #Menampilkan hasil satu responden
+    i=1
+    #Hasil per Kapasistas Fungsional
+    result_Individu[[i]]<-cbind(result_Individu$Indikator,result_Individu[i+1])
+    
+    #Hasil per BAB
+    Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
+    LevelSDM_Ind<-mean(individu[1:4,i])
+    GAP_Ind<-mean(individu[5:8,i])
+    summInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, LevelSDM_Ind, GAP_Ind))
+    colnames(summInd)<-c("Aspek Penilaian","Level","GAP")
+    
+    ##BAR Chart
+    dataInd<-as.data.frame(val_Individu)
+    graphInd<-cbind(Indikator,t((val_Individu[i,1:4])),t(val_Individu[i,5:8]))
+    colnames(graphInd)<-c("Indikator","Level","GAP")
+    tablesCDA$summaryInd <- graphInd
+    summInd
+  })
+  
+  output$resChartInd <- renderPlotly({
+    graphInd <- tablesCDA$summaryInd
+    plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+      add_trace(x=~GAP, name= 'GAP') %>%
+      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
+  })
+  
+  output$resTblSumm <- renderDataTable({
+    #Hasil per BAB Sistem
+    tempIndikator_Penilaian<-c("Regulasi/peraturan daerah","Integrasi dalam Perencanaan Pembangunan Daerah","Proses","Data dan Informasi","Pemantauan, Evaluasi, dan Pelaporan")
+    tempdataSistem<-as.data.frame(cbind(tempIndikator_Penilaian, LevelSistem, GAPSistem))
+    colnames(tempdataSistem)<-c("Aspek","Level","GAP")
+    
+    #Hasil per BAB Organisasi
+    orgLevel_gabungan<-mean(LevelOrg,LevelSDM,LevelTek)
+    orgGAP_gabungan<-mean(gapOrg,gapSDM,gapTek)
+    Aspek<-"Organisasi"
+    Level<-orgLevel_gabungan
+    GAP<-orgGAP_gabungan
+    tempdataOrg<-cbind(Aspek, Level, GAP)
+    
+    #Hasil per BAB Individu
+    tempIndikator_Penilaian_Ind<-"Sumber Daya Manusia"
+    tempdataInd<-as.data.frame(cbind(tempIndikator_Penilaian_Ind, LevelSDM_Ind, GAP_Ind))
+    colnames(tempdataInd)<-c("Aspek","Level","GAP")
+    
+    ##Hasil Gabungan sementara
+    tempsummary<-data.frame(rbind(tempdataSistem,tempdataOrg,tempdataInd))
+    rownames(tempsummary)<-1:7
+    
+    ##Hasil Gabungan akhir
+    a<-as.factor(tempsummary$Aspek)
+    Aspek<-as.data.frame(a)
+    b<-as.numeric(tempsummary$Level)
+    Level<-as.data.frame(b)
+    c<-as.numeric(tempsummary$GAP)
+    GAP<-as.data.frame(c)
+    summary<-cbind(Aspek,Level,GAP)
+    colnames(summary)<-c("Aspek","Level","GAP")
+    graphSumm <- summary
+    tablesCDA$allSummary <- graphSumm
+    summary
+ 
+  })
+  
+  output$resChartSumm <- renderPlotly({
+    ###BAR CHART Summary
+    graphSumm<-tablesCDA$allSummary
+    plot_ly(summary, x=~Aspek, y=~Level, type='bar', name='Level') %>%
+      add_trace(y=~GAP, name='GAP') %>%
+      layout(yaxis = list(title='Nilai'), barmode='stack', title="Level dan Gap Penilaian Kapasitas Semua Tingkat")
+  })
+  
   output$koboMap <- renderLeaflet({
     long_lat_data<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
     long_lat_data$`_respgeopoint_latitude` <- as.numeric(long_lat_data$`_respgeopoint_latitude`)
@@ -207,90 +382,14 @@ server <- function(input, output, session) {
     leaflet(data = kobo_data) %>% addTiles() %>% addMarkers(
       clusterOptions = markerClusterOptions()
     )
-
-  })
-  
-  output$tabelSys <- renderDataTable({
-    tblSystem <- tablesCDA$tableSystem
-    tblSystem
-  })
-  
-  output$rateTbl <- renderDataTable({
-    desc <- c("REGULASI", "INTEGRASI DALAM PERENCANAAN PEMBANGUNAN DAERAH", "PROSES", "ORGANISASI", "SDM", "DATA DAN INFORMASI", "PEMANTAUAN EVALUASI DAN PELAPORAN")
-
-    tblSystem <- tablesCDA$tableSystem
-
-    # regulasi
-    regulasi <- mean(c(tblSystem[1, 1], tblSystem[1, 2]))
-    # integrasi dlm perencanaan pembangunan daerah
-    integrasi <- mean(c(tblSystem[1, 3], tblSystem[1, 4], tblSystem[1, 5], tblSystem[1, 6], mean(c(tblSystem[1, 7], tblSystem[1, 8])) ))
-    # proses
-    proses <- mean(c(unlist(tblSystem[1, 9:13])))
-    # organisasi
-    organisasi <- 0
-    # sdm 
-    sdm <- 0
-    # data dan informasi
-    informasi <- mean(c(mean(c(unlist(tblSystem[1, 14:32]))), 
-                        mean(c(unlist(tblSystem[1, 33:51]))),
-                        mean(c(tblSystem[1, 52], tblSystem[1, 53]))
-                        ))
-    # pep
-    pep <- mean(c(mean(c(unlist(tblSystem[1, 54:58]))),
-                  mean(c(unlist(tblSystem[1, 59:63]))),
-                  mean(c(unlist(tblSystem[1, 64:66])))
-                  ))
-
-    level <- c(regulasi, integrasi, proses, organisasi, sdm, informasi, pep)
-    gap <- 5-level
     
+  })
+  
+  # # Export data
+  # observeEvent(input$exportInd, {
+  #   saveData(tablesCDA$tableIndividu)
+  # })
 
-    summary <- data.frame(SUMMARY=desc, LEVEL=level, GAP=gap)
-    tablesCDA$summary <- summary
-    summary
-  })
-  
-  output$rateChart <- renderPlotly({
-    plot_ly(tablesCDA$summary, x=~SUMMARY, y=~LEVEL, type='bar', name='LEVEL') %>%
-      add_trace(y=~GAP, name='GAP') %>%
-      layout(yaxis = list(title='VALUE'), barmode='stack')
-  })
-  
-  # Append data
-  observeEvent(input$submitSys, {
-    tbl <- formSystem()
-    tablesCDA$tableSystem <- rbind(tablesCDA$tableSystem, tbl)
-  })
-  
-  observeEvent(input$submitOrg, {
-    tbl <- formOrganisation()
-    tablesCDA$tableOrganisation <- rbind(tablesCDA$tableOrganisation, tbl)
-  })
-  
-  observeEvent(input$submitInd, {
-    tbl <- formIndividu()
-    tablesCDA$tableIndividu <- rbind(tablesCDA$tableIndividu, tbl)
-  })
-  
-  # Export data
-  observeEvent(input$exportInd, {
-    saveData(tablesCDA$tableIndividu)
-  })
- 
-  ##Mandatory field 
-  observe({
-    # check if all mandatory fields have a value
-    mandatoryFilled <-
-      vapply(fieldsMandatory,
-             function(x) {
-               !is.null(input[[x]]) && input[[x]] != ""
-             },
-             logical(1))
-    mandatoryFilled <- all(mandatoryFilled)
-    
-    # enable/disable the submit button
-    shinyjs::toggleState(id = "submit", condition = mandatoryFilled)
-  })
   
 }
 
