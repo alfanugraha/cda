@@ -98,7 +98,7 @@ dashboardPage(
       ###*tab-profil
       
       tabItem(tabName = "profil",
-              fluidPage(theme = shinytheme("cyborg"),
+              fluidPage(#theme = shinytheme("cyborg"),
                 shinyjs::useShinyjs(),
                 shinyjs::inlineCSS(appCSS),
                 div(

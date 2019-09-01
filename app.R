@@ -1,6 +1,6 @@
 ###*initiate library##
 library(shiny)
-library(shinythemes)
+#library(shinythemes)
 library(shinydashboard)
 library(shinyLP)
 library(shinyjs)
