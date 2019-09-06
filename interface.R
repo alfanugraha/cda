@@ -22,14 +22,14 @@ appCSS <- ".mandatory_star { color: red; }"
 dashboardPage(
   skin = 'blue', 
   ###*header####
-  header = dashboardHeader(title="Penilaian Mandiri Kapasitas Perencanaan Pembangunan Karbon Daerah (PPRKD)", titleWidth = "300px"),
+  header = dashboardHeader(title="Penilaian Mandiri Kapasitas PPRKD", titleWidth = "400px"),
   
   ###*sidebar####
-  sidebar = dashboardSidebar(width = "300px",
+  sidebar = dashboardSidebar(width = "400px",
                              sidebarMenu(
                                menuItem("Home", icon = icon("home"), tabName = "home"),
                                ###sidebar-profil####
-                               menuItem("Profil", tabName = "profil"),
+                               # menuItem("Profil", tabName = "profil"),
                                ###sidebar-system####
                                # menuItem("Tes",
                                #   lapply(1:nrow(system_func_capacity), function(i){
@@ -97,21 +97,21 @@ dashboardPage(
       ),
       ###*tab-profil
       
-      tabItem(tabName = "profil",
-              fluidPage(#theme = shinytheme("cyborg"),
-                shinyjs::useShinyjs(),
-                shinyjs::inlineCSS(appCSS),
-                div(
-                  selectInput("prov", labelMandatory("Provinsi"),c("Pilih salah satu"="",provinces)),
-                  textInput("nama", labelMandatory("Nama Lengkap"), value="", width=NULL, placeholder=""),
-                  textInput("institusi", labelMandatory("Institusi"), value="", width=NULL, placeholder=""),
-                  textInput("posisi", labelMandatory("Posisi"), value="", width=NULL, placeholder=""),
-                  textInput("jabatan", labelMandatory("Jabatan"), value="", width=NULL, placeholder=""),
-                  dateInput('date', label = labelMandatory('Tanggal'), value = as.character(Sys.Date()), format = "dd/mm/yy", startview = 'year'),
-                  actionButton("submitProfil", "Submit")
-                )
-              )
-      ),
+      # tabItem(tabName = "profil",
+      #         fluidPage(#theme = shinytheme("cyborg"),
+      #           shinyjs::useShinyjs(),
+      #           shinyjs::inlineCSS(appCSS),
+      #           div(
+      #             selectInput("prov", labelMandatory("Provinsi"),c("Pilih salah satu"="",provinces)),
+      #             textInput("nama", labelMandatory("Nama Lengkap"), value="", width=NULL, placeholder=""),
+      #             textInput("institusi", labelMandatory("Institusi"), value="", width=NULL, placeholder=""),
+      #             textInput("posisi", labelMandatory("Posisi"), value="", width=NULL, placeholder=""),
+      #             textInput("jabatan", labelMandatory("Jabatan"), value="", width=NULL, placeholder=""),
+      #             dateInput('date', label = labelMandatory('Tanggal'), value = as.character(Sys.Date()), format = "dd/mm/yy", startview = 'year'),
+      #             actionButton("submitProfil", "Submit")
+      #           )
+      #         )
+      # ),
 
       tabItem(tabName = "resTbl",
               dataTableOutput("resTblSys"),
