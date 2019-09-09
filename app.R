@@ -1,6 +1,5 @@
 ###*initiate library##
 library(shiny)
-#library(shinythemes)
 library(shinydashboard)
 library(shinyLP)
 library(shinyjs)
@@ -18,117 +17,59 @@ server <- function(input, output, session) {
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame())
   
   output$resTblSys <- renderDataTable({
-    inputResp<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
+    inputResp<-read_excel("data/cdna_sistem2.xlsx")
     
-    inputResp$intro1<-NULL
-    inputResp$acknowledge1<-NULL
-    inputResp$introSistem<-NULL
-    inputResp$inroRegulasi<-NULL
-    inputResp$introIntergrasi<-NULL
-    inputResp$introProses<-NULL
-    inputResp$introDataInfo<-NULL
-    inputResp$introPemantauan<-NULL
-    inputResp$introOrganisasi<-NULL
-    inputResp$introPerangkat<-NULL
-    inputResp$introSDM<-NULL
-    inputResp$introTeknologi<-NULL
-    inputResp$`_Terima_kasih_ata_nekan_tombol_berikut`<-NULL
-    
+    inputResp$logo<-NULL; inputResp$intro0<-NULL; inputResp$intro0a<-NULL; inputResp$url_widget2<-NULL; inputResp$url_widget2_001<-NULL; inputResp$intro1<-NULL; inputResp$respgeopoint<-NULL
+    inputResp$tanggal<-NULL; inputResp$`_index`<-NULL;inputResp$`_validation_status`<-NULL; inputResp$`_submission_time`<-NULL; inputResp$`_uuid`<-NULL; inputResp$`_id`<-NULL
+    inputResp$`_respgeopoint_precision`<-NULL; inputResp$`_respgeopoint_altitude`<-NULL; inputResp$intropenutup<-NULL; inputResp$intropenutup2<-NULL; inputResp$introSistem<-NULL
+    inputResp$introregulasi<-NULL; inputResp$introintegrasi1<-NULL; inputResp$introproses1<-NULL; inputResp$introdatainfo1<-NULL;inputResp$intropemantauan1<-NULL
     inputResp$alasan<-NULL
     for (i in 1:9){
       eval(parse(text=paste0("inputResp$alasan_00",i,"<-NULL")))
     }
     
-    for (i in 9:99){
+    for (i in 9:65){
       eval(parse(text=paste0("inputResp$alasan_0",i,"<-NULL")))
     }
     
-    for (i in 100:110){
-      eval(parse(text=paste0("inputResp$alasan_",i,"<-NULL")))
-    }
-    
     inputResp<-as.data.frame(inputResp)
+    sistem<- as.data.frame(lapply(inputResp[,2:length(inputResp)], as.numeric))
     
-    ###SISTEM###
-    sistem<- as.data.frame(lapply(inputResp[,11:76], as.numeric))
+    q2.5<-rowSums(sistem[,7:8]); q2.5<- as.data.frame(q2.5)/2
+    q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
+    q7.2 <- rowSums(sistem[,33:51]); q7.2<- as.data.frame(q7.2)/19
+    q7.3<-rowSums(sistem[,52:53]); q7.3<-as.data.frame(q7.3)/2
+    q9.1<-rowSums(sistem[,54:58]); q9.1<-as.data.frame(q9.1)/5
+    q9.2<-rowSums(sistem[,59:63]); q9.2<-as.data.frame(q9.2)/5
+    q9.3<-rowSums(sistem[,64:66]); q9.3<-as.data.frame(q9.3)/3
     
-    q2.5<-rowSums(sistem[,7:8])
-    q2.5<- as.data.frame(q2.5)/2
+    levelSistem<-cbind(inputResp$provinsi_001,sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3)
+    colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3")
     
-    q7.1 <- rowSums(sistem[,14:32])
-    q7.1<- as.data.frame(q7.1)/19
-    
-    q7.2 <- rowSums(sistem[,33:51])
-    q7.2<- as.data.frame(q7.2)/19
-    
-    q7.3<-rowSums(sistem[,52:53])
-    q7.3<-as.data.frame(q7.3)/2
-    
-    q9.1<-rowSums(sistem[,54:58])
-    q9.1<-as.data.frame(q9.1)/5
-    
-    q9.2<-rowSums(sistem[,59:63])
-    q9.2<-as.data.frame(q9.2)/5
-    
-    q9.3<-rowSums(sistem[,64:66])
-    q9.3<-as.data.frame(q9.3)/3
-    
-    levelSistem<-cbind(sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3)
-    colnames(levelSistem)<-c("q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3")
-    
-    gap_1.1<-5-levelSistem$q1.1
-    gap_1.2<-5-levelSistem$q1.2
-    gap_2.1<-5-levelSistem$q2.1
-    gap_2.2<-5-levelSistem$q2.2
-    gap_2.3<-5-levelSistem$q2.3
-    gap_2.4<-5-levelSistem$q2.4
-    gap_2.5<-5-levelSistem$q2.5
-    gap_3.1<-5-levelSistem$q3.1
-    gap_3.2<-5-levelSistem$q3.2
-    gap_3.3<-5-levelSistem$q3.3
-    gap_3.4<-5-levelSistem$q3.4
-    gap_3.5<-5-levelSistem$q3.5
-    gap_7.1<-5-levelSistem$q7.1
-    gap_7.2<-5-levelSistem$q7.2
-    gap_7.3<-5-levelSistem$q7.3
-    gap_9.1<-5-levelSistem$q9.1
-    gap_9.2<-5-levelSistem$q9.2
-    gap_9.3<-5-levelSistem$q9.3
+    gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
+    gap_3.1<-5-levelSistem$q3.1; gap_3.2<-5-levelSistem$q3.2; gap_3.3<-5-levelSistem$q3.3; gap_3.4<-5-levelSistem$q3.4; gap_3.5<-5-levelSistem$q3.5
+    gap_7.1<-5-levelSistem$q7.1; gap_7.2<-5-levelSistem$q7.2; gap_7.3<-5-levelSistem$q7.3; gap_9.1<-5-levelSistem$q9.1; gap_9.2<-5-levelSistem$q9.2; gap_9.3<-5-levelSistem$q9.3
     valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
     val_Sistem<-cbind(levelSistem,valGAP)
-    tempSistem<-as.data.frame(t(val_Sistem))
+    tempSistem<-as.data.frame((val_Sistem))
     
     indikatorSistem <- read.table("init/system.csv", header=TRUE, sep=",")
     tes <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
-    colnames(tes)<-"Indikator"
-    result_Sistem <-cbind(tes,tempSistem)
     
     #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Sistem[[i]]<-cbind(result_Sistem$Indikator,result_Sistem[i+1])
+    tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
     
     #Hasil per BAB
     Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
-    LevelReg<-mean(tempSistem[1:2,i])
-    LevelInt<-mean(tempSistem[3:7,i])
-    LevelProses<-mean(tempSistem[8:12,i])
-    LevelData<-mean(tempSistem[13:15,i])
-    LevelPEP<-mean(tempSistem[16:18,i])
-    Level_Sistem<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
-    gapReg<-mean(tempSistem[19:20,i])
-    gapInt<-mean(tempSistem[21:25,i])
-    gapProses<-mean(tempSistem[26:30,i])
-    gapData<-mean(tempSistem[31:33,i])
-    gapPEP<-mean(tempSistem[34:35,i])
+    LevelReg<-mean(as.numeric(tempSistem[2:3])); LevelInt<-mean(as.numeric(tempSistem[4:8])); LevelProses<-mean(as.numeric(tempSistem[9:13])); LevelData<-mean(as.numeric(tempSistem[14:16])); LevelPEP<-mean(as.numeric(tempSistem[17:19]))
+    LevelSistem<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
+    gapReg<-mean(as.numeric(tempSistem[20:21])); gapInt<-mean(as.numeric(tempSistem[22:26])); gapProses<-mean(as.numeric(tempSistem[27:32])); gapData<-mean(as.numeric(tempSistem[33:35])); gapPEP<-mean(as.numeric(tempSistem[36:37]))
     GAPSistem<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    summSistem<-as.data.frame(cbind(Indikator_Penilaian, Level_Sistem, GAPSistem))
+    summSistem<-as.data.frame(cbind(Indikator_Penilaian, LevelSistem, GAPSistem))
     colnames(summSistem)<-c("Aspek Penilaian","Level","GAP")
-    rownames(summSistem)<-c("1","2","3","4","5")
     
     ##BAR CHART
-    dataSistem<-as.data.frame(val_Sistem)
-    graphSistem<-cbind(tes,t((val_Sistem[i,1:18])),t(val_Sistem[i,19:36]))
+    graphSistem<-cbind(tes,t((tempSistem[2:19])),t(tempSistem[20:37]))
     colnames(graphSistem)<-c("Indikator","Level","GAP")
     tablesCDA$summarySystem <- graphSistem
     summSistem
@@ -142,129 +83,65 @@ server <- function(input, output, session) {
   })
   
   output$resTblOrg <- renderDataTable({
-    inputResp2<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
+    inputResp2<-read_excel("data/cdna_org2.xlsx")
     
-    inputResp2$intro1<-NULL
-    inputResp2$acknowledge1<-NULL
-    inputResp2$introSistem<-NULL
-    inputResp2$inroRegulasi<-NULL
-    inputResp2$introIntergrasi<-NULL
-    inputResp2$introProses<-NULL
-    inputResp2$introDataInfo<-NULL
-    inputResp2$introPemantauan<-NULL
-    inputResp2$introOrganisasi<-NULL
-    inputResp2$introPerangkat<-NULL
-    inputResp2$introSDM<-NULL
-    inputResp2$introTeknologi<-NULL
-    inputResp2$`_Terima_kasih_ata_nekan_tombol_berikut`<-NULL
-    
+    inputResp2$logo<-NULL; inputResp2$intro0<-NULL; inputResp2$intro0a<-NULL; inputResp2$url_widget2<-NULL; inputResp2$intro1a<-NULL; inputResp2$nama<-NULL; inputResp2$institusi<-NULL
+    inputResp2$jabatan<-NULL; inputResp2$tanggal<-NULL; inputResp2$introOrganisasi<-NULL; inputResp2$introperangkat1<-NULL; inputResp2$introsdm1<-NULL; inputResp2$introteknologi1<-NULL
+    inputResp2$`_index`<-NULL; inputResp2$`_validation_status`<-NULL; inputResp2$`_submission_time`<-NULL; inputResp2$`_uuid`<-NULL; inputResp2$`_id`<-NULL; inputResp2$intropenutup1<-NULL; inputResp2$intropenutup<-NULL
     inputResp2$alasan<-NULL
     for (i in 1:9){
       eval(parse(text=paste0("inputResp2$alasan_00",i,"<-NULL")))
     }
     
-    for (i in 9:99){
+    for (i in 10:44){
       eval(parse(text=paste0("inputResp2$alasan_0",i,"<-NULL")))
     }
     
-    for (i in 100:110){
-      eval(parse(text=paste0("inputResp2$alasan_",i,"<-NULL")))
-    }
+    inputOrg<-as.data.frame(inputResp2)
+    organisasi<- as.data.frame(lapply(inputOrg[,2:length(inputOrg)], as.numeric))
     
-    inputResp<-as.data.frame(inputResp2)
-    organisasi<- as.data.frame(lapply(inputResp2[,77:121], as.numeric))
-    
-    q4.1<-rowSums(organisasi[,1:2])
-    q4.1<- as.data.frame(q4.1)/2
-    
-    q4.2<-rowSums(organisasi[,3:5])
-    q4.2<- as.data.frame(q4.2)/3
-    
-    q4.3<-rowSums(organisasi[,6:7])
-    q4.3<- as.data.frame(q4.3)/2
-    
-    q4.4<-rowSums(organisasi[,8:11])
-    q4.4<- as.data.frame(q4.4)/4
-    
-    q4.5<-rowSums(organisasi[,12:14])
-    q4.5<- as.data.frame(q4.5)/3
-    
-    q4.6<-rowSums(organisasi[,15:16])
-    q4.6<- as.data.frame(q4.6)/2
-    
-    q4.7<-rowSums(organisasi[,17:23])
-    q4.7<- as.data.frame(q4.7)/7
-    
-    q5.1<-rowSums(organisasi[,24:30])
-    q5.1<- as.data.frame(q5.1)/7
-    
-    q5.2<-organisasi$q5.2
-    q5.3<-organisasi$q5.3
-    
-    q5.4<-rowSums(organisasi[,33:34])
-    q5.4<- as.data.frame(q5.4)/2
-    
-    q5.5<-rowSums(organisasi[,35:36])
-    q5.5<- as.data.frame(q5.5)/2
-    
-    q8.1<-rowSums(organisasi[,37:40])
-    q8.1<- as.data.frame(q8.1)/4
-    
-    q8.2<-rowSums(organisasi[,41:43])
-    q8.2<- as.data.frame(q8.2)/3
-    
-    q8.3<-rowSums(organisasi[,44:45])
-    q8.3<- as.data.frame(q8.3)/2
-    
-    valOrganisasi <- cbind(q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
-    
-    gap4.1<-5-q4.1
-    gap4.2<-5-q4.2
-    gap4.3<-5-q4.3
-    gap4.4<-5-q4.4
-    gap4.5<-5-q4.5
-    gap4.6<-5-q4.6
-    gap4.7<-5-q4.7
-    gap5.1<-5-q5.1
-    gap5.2<-5-q5.2
-    gap5.3<-5-q5.3
-    gap5.4<-5-q5.4
-    gap5.5<-5-q5.5
-    gap8.1<-5-q8.1
-    gap8.2<-5-q8.2
-    gap8.3<-5-q8.3
-    valGAPorg<- cbind(gap4.1,gap4.2,gap4.3,gap4.4,gap4.5,gap4.6,gap4.7,gap5.1,gap5.2,gap5.3,gap5.4,gap5.5,gap8.1,gap8.2,gap8.3)
-    colnames(valGAPorg)<-c("gap4.1","gap4.2","gap4.3","gap4.4","gap4.5","gap4.6","gap4.7","gap5.1","gap5.2","gap5.3","gap5.4","gap5.5","gap8.1","gap8.2","gap8.3")
-    val_Organisasi<-cbind(valOrganisasi,valGAPorg)
-    tempOrganisasi<-as.data.frame(t(val_Organisasi))
+    q4.1<-rowSums(organisasi[,1:2]); q4.1<- as.data.frame(q4.1)/2
+    q4.2<-rowSums(organisasi[,3:5]); q4.2<- as.data.frame(q4.2)/3
+    q4.3<-rowSums(organisasi[,6:7]); q4.3<- as.data.frame(q4.3)/2
+    q4.4<-rowSums(organisasi[,8:11]); q4.4<- as.data.frame(q4.4)/4
+    q4.5<-rowSums(organisasi[,12:14]); q4.5<- as.data.frame(q4.5)/3
+    q4.6<-rowSums(organisasi[,15:16]); q4.6<- as.data.frame(q4.6)/2
+    q4.7<-rowSums(organisasi[,17:23]); q4.7<- as.data.frame(q4.7)/7
+    q5.1<-rowSums(organisasi[,24:30]); q5.1<- as.data.frame(q5.1)/7
+    q5.2<-organisasi$q5.2; q5.3<-organisasi$q5.3
+    q5.4<-rowSums(organisasi[,33:34]); q5.4<- as.data.frame(q5.4)/2
+    q5.5<-rowSums(organisasi[,35:36]); q5.5<- as.data.frame(q5.5)/2
+    q8.1<-rowSums(organisasi[,37:40]); q8.1<- as.data.frame(q8.1)/4
+    q8.2<-rowSums(organisasi[,41:43]); q8.2<- as.data.frame(q8.2)/3
+    q8.3<-rowSums(organisasi[,44:45]); q8.3<- as.data.frame(q8.3)/2
+    valOrganisasi <- cbind(inputOrg$provinsi,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    tempOrganisasi<-as.data.frame(valOrganisasi)
     
     indikatorOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
     tes2 <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
     colnames(tes2)<-"Indikator"
-    result_Organisasi <-cbind(tes2,tempOrganisasi)
     
-    #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Organisasi[[i]]<-cbind(result_Organisasi$Indikator,result_Organisasi[i+1])
+    #Menampilkan hasil satu provinsi
+    tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince)
     
-    #Hasil per BAB
-    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
-    LevelOrg<-mean(tempOrganisasi[1:7,i])
-    LevelSDM<-mean(tempOrganisasi[8:12,i])
-    LevelTek<-mean(tempOrganisasi[13:15,i])
+    Level4<-rowSums(tempOrganisasi[,2:8])/length(tempOrganisasi[,2:8])
+    LevelOrg<-mean(Level4)
+    Level5 <- rowSums(tempOrganisasi[,9:13])/length(tempOrganisasi[,9:13])
+    LevelSDM<-mean(Level5)
+    Level8 <- rowSums(tempOrganisasi[,14:16])/length(tempOrganisasi[,14:16])
+    LevelTek<-mean(Level8)
     LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
-    gapOrg<-mean(tempOrganisasi[16:22,i])
-    gapSDM<-mean(tempOrganisasi[23:27,i])
-    gapTek<-mean(tempOrganisasi[28:30,i])
-    gapOrg_gabungan<-as.data.frame(t(cbind(gapOrg,gapSDM,gapTek)))
+    gapOrg_gabungan<-5-LevelOrg_gabungan
+    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
     summOrg<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(summOrg)<- c("Aspek Penilaian", "Level", "GAP")
-    rownames(summOrg)<- c("1","2","3")
     
-    ##BAR CHART
-    dataOrg<-as.data.frame(val_Organisasi)
-    graphOrg<-cbind(tes2,t((val_Organisasi[i,1:15])),t(val_Organisasi[i,16:30]))
+    Ind4.1<-mean(tempOrganisasi$q4.1); Ind4.2<-mean(tempOrganisasi$q4.2); Ind4.3<-mean(tempOrganisasi$q4.3); Ind4.4<-mean(tempOrganisasi$q4.4); Ind4.5<-mean(tempOrganisasi$q4.5); Ind4.6<-mean(tempOrganisasi$q4.6); Ind4.7<-mean(tempOrganisasi$q4.7)
+    Ind5.1<-mean(tempOrganisasi$q5.1); Ind5.2<-mean(tempOrganisasi$q5.2); Ind5.3<-mean(tempOrganisasi$q5.3); Ind5.4<-mean(tempOrganisasi$q5.4); Ind5.5<-mean(tempOrganisasi$q5.5)
+    Ind8.1<-mean(tempOrganisasi$q8.1);Ind8.2<-mean(tempOrganisasi$q8.2);Ind8.3<-mean(tempOrganisasi$q8.3)
+    tempLevelOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    tempGapOrg<- 5-tempLevelOrg
+    graphOrg<-cbind(tes2,tempLevelOrg,tempGapOrg)
     colnames(graphOrg)<-c("Indikator","Level","GAP")
     tablesCDA$summaryOrg <- graphOrg
     summOrg
@@ -278,14 +155,12 @@ server <- function(input, output, session) {
   })
   
   output$resTblInd <- renderDataTable({
-    #Baca file excel dari KoBo
-    inputRespInd<-read_excel("data/CDNA_Individu.xlsx")
+    inputRespInd<-read_excel("data/cdna_ind2.xlsx")
     
-    inputRespInd$intro1<-NULL
-    inputRespInd$acknowledge1<-NULL
-    inputRespInd$introIndividu<-NULL
-    inputRespInd$introSDM2<-NULL
-    inputRespInd$`_Terimakasih_callr_nekan_tombol_berikut`<-NULL
+    inputRespInd$logo<-NULL; inputRespInd$intro0<-NULL; inputRespInd$intro0a<-NULL; inputRespInd$intro1a<-NULL; inputRespInd$callid<-NULL
+    inputRespInd$gender<-NULL; inputRespInd$jabatan<-NULL; inputRespInd$akun <- NULL; inputRespInd$tanggal<-NULL; inputRespInd$callresp<-NULL
+    inputRespInd$introIndividu<-NULL; inputRespInd$introSDM2<-NULL; inputRespInd$`_index`<-NULL; inputRespInd$`_validation_status`<-NULL
+    inputRespInd$`_submission_time`<-NULL; inputRespInd$`_uuid`<-NULL; inputRespInd$`_id`<-NULL; inputRespInd$intropenutup<-NULL
     inputRespInd$alasan<-NULL
     for (i in 1:9){
       eval(parse(text=paste0("inputRespInd$alasan_00",i,"<-NULL")))
@@ -296,283 +171,160 @@ server <- function(input, output, session) {
     }
     
     inputRespInd<-as.data.frame(inputRespInd)
-    # valResp<-unlist(inputRespInd[,15:37])
-    valResp<- as.data.frame(lapply(inputRespInd[,15:37], as.numeric))
+    valResp<- as.data.frame(lapply(inputRespInd[,6:length(inputRespInd)], as.numeric))
     
-    Level6.1<-rowSums(valResp[,1:2])
-    Level6.1<-as.data.frame(Level6.1)/2
-    
-    Level6.2<-rowSums(valResp[,3:11])
-    Level6.2<-as.data.frame(Level6.2)/9
-    
-    Level6.3<-rowSums(valResp[,12:20])
-    Level6.3<-as.data.frame(Level6.3)/9
-    
-    Level6.4<-rowSums(valResp[,21:23])
-    Level6.4<-as.data.frame(Level6.4)/3
-    
-    valInd<-cbind(Level6.1,Level6.2,Level6.3,Level6.4)
-    
-    gap6.1<-5-Level6.1
-    gap6.2<-5-Level6.2
-    gap6.3<-5-Level6.3
-    gap6.4<-5-Level6.4
-    valGAPind<-cbind(gap6.1,gap6.2,gap6.3,gap6.4)
-    colnames(valGAPind)<-c("gap6.1","gap6.2","gap6.3","gap6.4")
-    val_Individu <- cbind(valInd,valGAPind)
-    individu<-as.data.frame(t(val_Individu))
+    Level6.1<-rowSums(valResp[,1:2]); Level6.1<-as.data.frame(Level6.1)/2
+    Level6.2<-rowSums(valResp[,3:11]); Level6.2<-as.data.frame(Level6.2)/9
+    Level6.3<-rowSums(valResp[,12:20]); Level6.3<-as.data.frame(Level6.3)/9
+    Level6.4<-rowSums(valResp[,21:23]); Level6.4<-as.data.frame(Level6.4)/3
+    valInd<-cbind(inputRespInd$provinsi,Level6.1,Level6.2,Level6.3,Level6.4)
+    individu<-as.data.frame(valInd)
     
     Indikator <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     Indikator  <- as.data.frame(Indikator)
-    # colnames(Indikator)<-"Indikator Penilaian"
-    result_Individu<-cbind(Indikator,individu)
     
-    #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Individu[[i]]<-cbind(result_Individu$Indikator,result_Individu[i+1])
+    individu<-filter(individu,inputRespInd$provinsi==input$categoryProvince)
     
     #Hasil per BAB
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    LevelSDM_Ind<-mean(individu[1:4,i])
-    GAP_Ind<-mean(individu[5:8,i])
-    summInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, LevelSDM_Ind, GAP_Ind))
-    colnames(summInd)<-c("Aspek Penilaian","Level","GAP")
-    
+    Level6<-rowSums(individu[,2:5])/length(individu[,2:5])
+    Level6<-sum(Level6)/length(individu$`inputRespInd$provinsi`)
+    gap6<-5-Level6
+    summInd2<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
+    colnames(summInd2)<-c("Aspek Penilaian","Level","GAP")
+
     ##BAR Chart
-    dataInd<-as.data.frame(val_Individu)
-    graphInd<-cbind(Indikator,t((val_Individu[i,1:4])),t(val_Individu[i,5:8]))
-    colnames(graphInd)<-c("Indikator","Level","GAP")
-    tablesCDA$summaryInd <- graphInd
-    summInd
+    Ind6.1<-mean(individu$Level6.1); Ind6.2<-mean(individu$Level6.2); Ind6.3<-mean(individu$Level6.3); Ind6.4<-mean(individu$Level6.4)
+    tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+    tempGapInd <- 5 - tempLevelInd
+    graphInd2<-cbind(Indikator,tempLevelInd,tempGapInd)
+    colnames(graphInd2)<-c("Indikator","Level","GAP")
+    tablesCDA$summaryInd <- graphInd2
+    summInd2
   })
   
   output$resChartInd <- renderPlotly({
-    graphInd <- tablesCDA$summaryInd
-    plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+    graphInd2 <- tablesCDA$summaryInd
+    plot_ly(graphInd2, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
       layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
   })
   
   output$resTblSumm <- renderDataTable({
-    inputResp<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
+    ##Sistem
+    inputResp<-read_excel("data/cdna_sistem2.xlsx")
     
-    inputResp$intro1<-NULL
-    inputResp$acknowledge1<-NULL
-    inputResp$introSistem<-NULL
-    inputResp$inroRegulasi<-NULL
-    inputResp$introIntergrasi<-NULL
-    inputResp$introProses<-NULL
-    inputResp$introDataInfo<-NULL
-    inputResp$introPemantauan<-NULL
-    inputResp$introOrganisasi<-NULL
-    inputResp$introPerangkat<-NULL
-    inputResp$introSDM<-NULL
-    inputResp$introTeknologi<-NULL
-    inputResp$`_Terima_kasih_ata_nekan_tombol_berikut`<-NULL
-    
+    inputResp$logo<-NULL; inputResp$intro0<-NULL; inputResp$intro0a<-NULL; inputResp$url_widget2<-NULL; inputResp$url_widget2_001<-NULL; inputResp$intro1<-NULL; inputResp$respgeopoint<-NULL
+    inputResp$tanggal<-NULL; inputResp$`_index`<-NULL;inputResp$`_validation_status`<-NULL; inputResp$`_submission_time`<-NULL; inputResp$`_uuid`<-NULL; inputResp$`_id`<-NULL
+    inputResp$`_respgeopoint_precision`<-NULL; inputResp$`_respgeopoint_altitude`<-NULL; inputResp$intropenutup<-NULL; inputResp$intropenutup2<-NULL; inputResp$introSistem<-NULL
+    inputResp$introregulasi<-NULL; inputResp$introintegrasi1<-NULL; inputResp$introproses1<-NULL; inputResp$introdatainfo1<-NULL;inputResp$intropemantauan1<-NULL
     inputResp$alasan<-NULL
     for (i in 1:9){
       eval(parse(text=paste0("inputResp$alasan_00",i,"<-NULL")))
     }
     
-    for (i in 9:99){
+    for (i in 9:65){
       eval(parse(text=paste0("inputResp$alasan_0",i,"<-NULL")))
     }
     
-    for (i in 100:110){
-      eval(parse(text=paste0("inputResp$alasan_",i,"<-NULL")))
-    }
-    
     inputResp<-as.data.frame(inputResp)
+    sistem<- as.data.frame(lapply(inputResp[,2:length(inputResp)], as.numeric))
     
-    ###SISTEM###
-    sistem<- as.data.frame(lapply(inputResp[,11:76], as.numeric))
+    q2.5<-rowSums(sistem[,7:8]); q2.5<- as.data.frame(q2.5)/2
+    q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
+    q7.2 <- rowSums(sistem[,33:51]); q7.2<- as.data.frame(q7.2)/19
+    q7.3<-rowSums(sistem[,52:53]); q7.3<-as.data.frame(q7.3)/2
+    q9.1<-rowSums(sistem[,54:58]); q9.1<-as.data.frame(q9.1)/5
+    q9.2<-rowSums(sistem[,59:63]); q9.2<-as.data.frame(q9.2)/5
+    q9.3<-rowSums(sistem[,64:66]); q9.3<-as.data.frame(q9.3)/3
     
-    q2.5<-rowSums(sistem[,7:8])
-    q2.5<- as.data.frame(q2.5)/2
+    levelSistem<-cbind(inputResp$provinsi_001,sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3)
+    colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3")
     
-    q7.1 <- rowSums(sistem[,14:32])
-    q7.1<- as.data.frame(q7.1)/19
-    
-    q7.2 <- rowSums(sistem[,33:51])
-    q7.2<- as.data.frame(q7.2)/19
-    
-    q7.3<-rowSums(sistem[,52:53])
-    q7.3<-as.data.frame(q7.3)/2
-    
-    q9.1<-rowSums(sistem[,54:58])
-    q9.1<-as.data.frame(q9.1)/5
-    
-    q9.2<-rowSums(sistem[,59:63])
-    q9.2<-as.data.frame(q9.2)/5
-    
-    q9.3<-rowSums(sistem[,64:66])
-    q9.3<-as.data.frame(q9.3)/3
-    
-    levelSistem<-cbind(sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3)
-    colnames(levelSistem)<-c("q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3")
-    
-    gap_1.1<-5-levelSistem$q1.1
-    gap_1.2<-5-levelSistem$q1.2
-    gap_2.1<-5-levelSistem$q2.1
-    gap_2.2<-5-levelSistem$q2.2
-    gap_2.3<-5-levelSistem$q2.3
-    gap_2.4<-5-levelSistem$q2.4
-    gap_2.5<-5-levelSistem$q2.5
-    gap_3.1<-5-levelSistem$q3.1
-    gap_3.2<-5-levelSistem$q3.2
-    gap_3.3<-5-levelSistem$q3.3
-    gap_3.4<-5-levelSistem$q3.4
-    gap_3.5<-5-levelSistem$q3.5
-    gap_7.1<-5-levelSistem$q7.1
-    gap_7.2<-5-levelSistem$q7.2
-    gap_7.3<-5-levelSistem$q7.3
-    gap_9.1<-5-levelSistem$q9.1
-    gap_9.2<-5-levelSistem$q9.2
-    gap_9.3<-5-levelSistem$q9.3
-    valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
-    val_Sistem<-cbind(levelSistem,valGAP)
-    tempSistem<-as.data.frame(t(val_Sistem))
+    # gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
+    # gap_3.1<-5-levelSistem$q3.1; gap_3.2<-5-levelSistem$q3.2; gap_3.3<-5-levelSistem$q3.3; gap_3.4<-5-levelSistem$q3.4; gap_3.5<-5-levelSistem$q3.5
+    # gap_7.1<-5-levelSistem$q7.1; gap_7.2<-5-levelSistem$q7.2; gap_7.3<-5-levelSistem$q7.3; gap_9.1<-5-levelSistem$q9.1; gap_9.2<-5-levelSistem$q9.2; gap_9.3<-5-levelSistem$q9.3
+    # valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
+    # val_Sistem<-cbind(levelSistem,valGAP)
+    tempSistem<-as.data.frame((val_Sistem))
     
     indikatorSistem <- read.table("init/system.csv", header=TRUE, sep=",")
     tes <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
-    colnames(tes)<-"Indikator"
-    result_Sistem <-cbind(tes,tempSistem)
     
     #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Sistem[[i]]<-cbind(result_Sistem$Indikator,result_Sistem[i+1])
+    tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
     
     #Hasil per BAB
     Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
-    LevelReg<-mean(tempSistem[1:2,i])
-    LevelInt<-mean(tempSistem[3:7,i])
-    LevelProses<-mean(tempSistem[8:12,i])
-    LevelData<-mean(tempSistem[13:15,i])
-    LevelPEP<-mean(tempSistem[16:18,i])
-    Level_Sistem<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
-    gapReg<-mean(tempSistem[19:20,i])
-    gapInt<-mean(tempSistem[21:25,i])
-    gapProses<-mean(tempSistem[26:30,i])
-    gapData<-mean(tempSistem[31:33,i])
-    gapPEP<-mean(tempSistem[34:35,i])
-    GAPSistem<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    summSistem<-as.data.frame(cbind(Indikator_Penilaian, Level_Sistem, GAPSistem))
+    LevelReg<-mean(as.numeric(tempSistem[2:3])); LevelInt<-mean(as.numeric(tempSistem[4:8])); LevelProses<-mean(as.numeric(tempSistem[9:13])); LevelData<-mean(as.numeric(tempSistem[14:16])); LevelPEP<-mean(as.numeric(tempSistem[17:19]))
+    LevelSistem<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
+    # gapReg<-mean(as.numeric(tempSistem[20:21])); gapInt<-mean(as.numeric(tempSistem[22:26])); gapProses<-mean(as.numeric(tempSistem[27:32])); gapData<-mean(as.numeric(tempSistem[33:35])); gapPEP<-mean(as.numeric(tempSistem[36:37]))
+    # GAPSistem2<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
+    GAPSistem<-5-LevelSistem
+    summSistem<-as.data.frame(cbind(Indikator_Penilaian, LevelSistem, GAPSistem))
     colnames(summSistem)<-c("Aspek Penilaian","Level","GAP")
-    rownames(summSistem)<-c("1","2","3","4","5")
     
-    #Hasil per BAB Sistem
-    tempIndikator_Penilaian<-c("Regulasi/peraturan daerah","Integrasi dalam Perencanaan Pembangunan Daerah","Proses","Data dan Informasi","Pemantauan, Evaluasi, dan Pelaporan")
-    tempdataSistem<-as.data.frame(cbind(tempIndikator_Penilaian, Level_Sistem, GAPSistem))
-    colnames(tempdataSistem)<-c("Aspek","Level","GAP")
+    ##Organisasi
+    inputResp2<-read_excel("data/cdna_org2.xlsx")
     
-    organisasi<- as.data.frame(lapply(inputResp[,77:121], as.numeric))
+    inputResp2$logo<-NULL; inputResp2$intro0<-NULL; inputResp2$intro0a<-NULL; inputResp2$url_widget2<-NULL; inputResp2$intro1a<-NULL; inputResp2$nama<-NULL; inputResp2$institusi<-NULL
+    inputResp2$jabatan<-NULL; inputResp2$tanggal<-NULL; inputResp2$introOrganisasi<-NULL; inputResp2$introperangkat1<-NULL; inputResp2$introsdm1<-NULL; inputResp2$introteknologi1<-NULL
+    inputResp2$`_index`<-NULL; inputResp2$`_validation_status`<-NULL; inputResp2$`_submission_time`<-NULL; inputResp2$`_uuid`<-NULL; inputResp2$`_id`<-NULL; inputResp2$intropenutup1<-NULL; inputResp2$intropenutup<-NULL
+    inputResp2$alasan<-NULL
+    for (i in 1:9){
+      eval(parse(text=paste0("inputResp2$alasan_00",i,"<-NULL")))
+    }
     
-    q4.1<-rowSums(organisasi[,1:2])
-    q4.1<- as.data.frame(q4.1)/2
+    for (i in 10:44){
+      eval(parse(text=paste0("inputResp2$alasan_0",i,"<-NULL")))
+    }
     
-    q4.2<-rowSums(organisasi[,3:5])
-    q4.2<- as.data.frame(q4.2)/3
+    inputOrg<-as.data.frame(inputResp2)
+    organisasi<- as.data.frame(lapply(inputOrg[,2:length(inputOrg)], as.numeric))
     
-    q4.3<-rowSums(organisasi[,6:7])
-    q4.3<- as.data.frame(q4.3)/2
-    
-    q4.4<-rowSums(organisasi[,8:11])
-    q4.4<- as.data.frame(q4.4)/4
-    
-    q4.5<-rowSums(organisasi[,12:14])
-    q4.5<- as.data.frame(q4.5)/3
-    
-    q4.6<-rowSums(organisasi[,15:16])
-    q4.6<- as.data.frame(q4.6)/2
-    
-    q4.7<-rowSums(organisasi[,17:23])
-    q4.7<- as.data.frame(q4.7)/7
-    
-    q5.1<-rowSums(organisasi[,24:30])
-    q5.1<- as.data.frame(q5.1)/7
-    
-    q5.2<-organisasi$q5.2
-    q5.3<-organisasi$q5.3
-    
-    q5.4<-rowSums(organisasi[,33:34])
-    q5.4<- as.data.frame(q5.4)/2
-    
-    q5.5<-rowSums(organisasi[,35:36])
-    q5.5<- as.data.frame(q5.5)/2
-    
-    q8.1<-rowSums(organisasi[,37:40])
-    q8.1<- as.data.frame(q8.1)/4
-    
-    q8.2<-rowSums(organisasi[,41:43])
-    q8.2<- as.data.frame(q8.2)/3
-    
-    q8.3<-rowSums(organisasi[,44:45])
-    q8.3<- as.data.frame(q8.3)/2
-    
-    valOrganisasi <- cbind(q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
-    
-    gap4.1<-5-q4.1
-    gap4.2<-5-q4.2
-    gap4.3<-5-q4.3
-    gap4.4<-5-q4.4
-    gap4.5<-5-q4.5
-    gap4.6<-5-q4.6
-    gap4.7<-5-q4.7
-    gap5.1<-5-q5.1
-    gap5.2<-5-q5.2
-    gap5.3<-5-q5.3
-    gap5.4<-5-q5.4
-    gap5.5<-5-q5.5
-    gap8.1<-5-q8.1
-    gap8.2<-5-q8.2
-    gap8.3<-5-q8.3
-    valGAPorg<- cbind(gap4.1,gap4.2,gap4.3,gap4.4,gap4.5,gap4.6,gap4.7,gap5.1,gap5.2,gap5.3,gap5.4,gap5.5,gap8.1,gap8.2,gap8.3)
-    colnames(valGAPorg)<-c("gap4.1","gap4.2","gap4.3","gap4.4","gap4.5","gap4.6","gap4.7","gap5.1","gap5.2","gap5.3","gap5.4","gap5.5","gap8.1","gap8.2","gap8.3")
-    val_Organisasi<-cbind(valOrganisasi,valGAPorg)
-    tempOrganisasi<-as.data.frame(t(val_Organisasi))
+    q4.1<-rowSums(organisasi[,1:2]); q4.1<- as.data.frame(q4.1)/2
+    q4.2<-rowSums(organisasi[,3:5]); q4.2<- as.data.frame(q4.2)/3
+    q4.3<-rowSums(organisasi[,6:7]); q4.3<- as.data.frame(q4.3)/2
+    q4.4<-rowSums(organisasi[,8:11]); q4.4<- as.data.frame(q4.4)/4
+    q4.5<-rowSums(organisasi[,12:14]); q4.5<- as.data.frame(q4.5)/3
+    q4.6<-rowSums(organisasi[,15:16]); q4.6<- as.data.frame(q4.6)/2
+    q4.7<-rowSums(organisasi[,17:23]); q4.7<- as.data.frame(q4.7)/7
+    q5.1<-rowSums(organisasi[,24:30]); q5.1<- as.data.frame(q5.1)/7
+    q5.2<-organisasi$q5.2; q5.3<-organisasi$q5.3
+    q5.4<-rowSums(organisasi[,33:34]); q5.4<- as.data.frame(q5.4)/2
+    q5.5<-rowSums(organisasi[,35:36]); q5.5<- as.data.frame(q5.5)/2
+    q8.1<-rowSums(organisasi[,37:40]); q8.1<- as.data.frame(q8.1)/4
+    q8.2<-rowSums(organisasi[,41:43]); q8.2<- as.data.frame(q8.2)/3
+    q8.3<-rowSums(organisasi[,44:45]); q8.3<- as.data.frame(q8.3)/2
+    valOrganisasi <- cbind(inputOrg$provinsi,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    tempOrganisasi<-as.data.frame(valOrganisasi)
     
     indikatorOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
     tes2 <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
     colnames(tes2)<-"Indikator"
-    result_Organisasi <-cbind(tes2,tempOrganisasi)
     
-    #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Organisasi[[i]]<-cbind(result_Organisasi$Indikator,result_Organisasi[i+1])
+    #Menampilkan hasil satu provinsi
+    tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince)
     
-    #Hasil per BAB
-    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
-    LevelOrg<-mean(tempOrganisasi[1:7,i])
-    LevelSDM<-mean(tempOrganisasi[8:12,i])
-    LevelTek<-mean(tempOrganisasi[13:15,i])
+    Level4<-rowSums(tempOrganisasi[,2:8])/length(tempOrganisasi[,2:8])
+    LevelOrg<-mean(Level4)
+    Level5 <- rowSums(tempOrganisasi[,9:13])/length(tempOrganisasi[,9:13])
+    LevelSDM<-mean(Level5)
+    Level8 <- rowSums(tempOrganisasi[,14:16])/length(tempOrganisasi[,14:16])
+    LevelTek<-mean(Level8)
     LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
-    gapOrg<-mean(tempOrganisasi[16:22,i])
-    gapSDM<-mean(tempOrganisasi[23:27,i])
-    gapTek<-mean(tempOrganisasi[28:30,i])
-    gapOrg_gabungan<-as.data.frame(t(cbind(gapOrg,gapSDM,gapTek)))
+    gapOrg_gabungan<-5-LevelOrg_gabungan
+    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
     summOrg<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(summOrg)<- c("Aspek Penilaian", "Level", "GAP")
-    rownames(summOrg)<- c("1","2","3")
     
-    #Hasil per BAB Organisasi
-    orgLevel_gabungan<-mean(LevelOrg,LevelSDM,LevelTek)
-    orgGAP_gabungan<-mean(gapOrg,gapSDM,gapTek)
-    Aspek<-"Organisasi"
-    Level<-orgLevel_gabungan
-    GAP<-orgGAP_gabungan
-    tempdataOrg<-cbind(Aspek, Level, GAP)
+    ##Individu
+    inputRespInd<-read_excel("data/cdna_ind2.xlsx")
     
-    inputRespInd<-read_excel("data/CDNA_Individu.xlsx")
-    
-    inputRespInd$intro1<-NULL
-    inputRespInd$acknowledge1<-NULL
-    inputRespInd$introIndividu<-NULL
-    inputRespInd$introSDM2<-NULL
-    inputRespInd$`_Terimakasih_callr_nekan_tombol_berikut`<-NULL
+    inputRespInd$logo<-NULL; inputRespInd$intro0<-NULL; inputRespInd$intro0a<-NULL; inputRespInd$intro1a<-NULL; inputRespInd$callid<-NULL
+    inputRespInd$gender<-NULL; inputRespInd$jabatan<-NULL; inputRespInd$akun <- NULL; inputRespInd$tanggal<-NULL; inputRespInd$callresp<-NULL
+    inputRespInd$introIndividu<-NULL; inputRespInd$introSDM2<-NULL; inputRespInd$`_index`<-NULL; inputRespInd$`_validation_status`<-NULL
+    inputRespInd$`_submission_time`<-NULL; inputRespInd$`_uuid`<-NULL; inputRespInd$`_id`<-NULL; inputRespInd$intropenutup<-NULL
     inputRespInd$alasan<-NULL
     for (i in 1:9){
       eval(parse(text=paste0("inputRespInd$alasan_00",i,"<-NULL")))
@@ -583,77 +335,47 @@ server <- function(input, output, session) {
     }
     
     inputRespInd<-as.data.frame(inputRespInd)
-    # valResp<-unlist(inputRespInd[,15:37])
-    valResp<- as.data.frame(lapply(inputRespInd[,15:37], as.numeric))
+    valResp<- as.data.frame(lapply(inputRespInd[,6:length(inputRespInd)], as.numeric))
     
-    Level6.1<-rowSums(valResp[,1:2])
-    Level6.1<-as.data.frame(Level6.1)/2
-    
-    Level6.2<-rowSums(valResp[,3:11])
-    Level6.2<-as.data.frame(Level6.2)/9
-    
-    Level6.3<-rowSums(valResp[,12:20])
-    Level6.3<-as.data.frame(Level6.3)/9
-    
-    Level6.4<-rowSums(valResp[,21:23])
-    Level6.4<-as.data.frame(Level6.4)/3
-    
-    valInd<-cbind(Level6.1,Level6.2,Level6.3,Level6.4)
-    
-    gap6.1<-5-Level6.1
-    gap6.2<-5-Level6.2
-    gap6.3<-5-Level6.3
-    gap6.4<-5-Level6.4
-    valGAPind<-cbind(gap6.1,gap6.2,gap6.3,gap6.4)
-    colnames(valGAPind)<-c("gap6.1","gap6.2","gap6.3","gap6.4")
-    val_Individu <- cbind(valInd,valGAPind)
-    individu<-as.data.frame(t(val_Individu))
+    Level6.1<-rowSums(valResp[,1:2]); Level6.1<-as.data.frame(Level6.1)/2
+    Level6.2<-rowSums(valResp[,3:11]); Level6.2<-as.data.frame(Level6.2)/9
+    Level6.3<-rowSums(valResp[,12:20]); Level6.3<-as.data.frame(Level6.3)/9
+    Level6.4<-rowSums(valResp[,21:23]); Level6.4<-as.data.frame(Level6.4)/3
+    valInd<-cbind(inputRespInd$provinsi,Level6.1,Level6.2,Level6.3,Level6.4)
+    individu<-as.data.frame(valInd)
     
     Indikator <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     Indikator  <- as.data.frame(Indikator)
-    # colnames(Indikator)<-"Indikator Penilaian"
-    result_Individu<-cbind(Indikator,individu)
     
-    #Menampilkan hasil satu responden
-    i=1
-    #Hasil per Kapasistas Fungsional
-    result_Individu[[i]]<-cbind(result_Individu$Indikator,result_Individu[i+1])
+    individu<-filter(individu,inputRespInd$provinsi==input$categoryProvince)
     
     #Hasil per BAB
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    LevelSDM_Ind<-mean(individu[1:4,i])
-    GAP_Ind<-mean(individu[5:8,i])
-    summInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, LevelSDM_Ind, GAP_Ind))
-    colnames(summInd)<-c("Aspek Penilaian","Level","GAP")
+    Level6<-rowSums(individu[,2:5])/length(individu[,2:5])
+    Level6<-sum(Level6)/length(individu$`inputRespInd$provinsi`)
+    gap6<-5-Level6
+    summInd2<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
+    colnames(summInd2)<-c("Aspek Penilaian","Level","GAP")
     
-    #Hasil per BAB Individu
-    tempIndikator_Penilaian_Ind<-"Sumber Daya Manusia"
-    tempdataInd<-as.data.frame(cbind(tempIndikator_Penilaian_Ind, LevelSDM_Ind, GAP_Ind))
-    colnames(tempdataInd)<-c("Aspek","Level","GAP")
-    
-    ##Hasil Gabungan sementara
-    tempsummary<-data.frame(rbind(tempdataSistem,tempdataOrg,tempdataInd))
-    rownames(tempsummary)<-1:7
-    
-    ##Hasil Gabungan akhir
-    a<-as.factor(tempsummary$Aspek)
-    Aspek<-as.data.frame(a)
-    b<-as.numeric(tempsummary$Level)
-    Level<-as.data.frame(b)
-    c<-as.numeric(tempsummary$GAP)
-    GAP<-as.data.frame(c)
-    summary<-cbind(Aspek,Level,GAP)
-    colnames(summary)<-c("Aspek","Level","GAP")
-    # graphSumm <- summary
+    ##Gabungan
+    summary<-as.data.frame(rbind(summSistem, summOrg, summInd2))
+    summary$`Aspek Penilaian`<-NULL
+    aspek<-c("Regulasi/peraturan daerah","Integrasi dalam Perencanaan Pembangunan Daerah", "Proses", "Data dan Informasi", "Pemantauan, Evaluasi, dan Pelaporan","Organisasi","Sumber Daya Manusia - Organisasi", "Teknologi", "Sumber Daya Manusia - Individu")
+    summary<-cbind(aspek,summary)
+    finalGAP<-as.data.frame(5-as.numeric(summary$Level))
+    summary$Level<-as.numeric(summary$Level)
+    summary<-as.data.frame(cbind(summary,finalGAP))
+    summary$GAP<-NULL
+    colnames(summary)<-c("Aspek Penilaian", "Level", "GAP")
+    rownames(summary)<-1:9
     tablesCDA$allSummary <- summary
     summary
- 
   })
   
   output$resChartSumm <- renderPlotly({
     ###BAR CHART Summary
     summary<-tablesCDA$allSummary
-    plot_ly(summary, x=~Aspek, y=~Level, type='bar', name='Level') %>%
+    plot_ly(summary, x=~`Aspek Penilaian`, y=~Level, type='bar', name='Level') %>%
       add_trace(y=~GAP, name='GAP') %>%
       layout(yaxis = list(title='Nilai'), barmode='stack', title="Level dan Gap Penilaian Kapasitas Semua Tingkat")
   })

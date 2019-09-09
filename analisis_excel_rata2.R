@@ -193,13 +193,14 @@ gap8.3<-5-q8.3
 valGAPorg<- cbind(gap4.1,gap4.2,gap4.3,gap4.4,gap4.5,gap4.6,gap4.7,gap5.1,gap5.2,gap5.3,gap5.4,gap5.5,gap8.1,gap8.2,gap8.3)
 colnames(valGAPorg)<-c("gap4.1","gap4.2","gap4.3","gap4.4","gap4.5","gap4.6","gap4.7","gap5.1","gap5.2","gap5.3","gap5.4","gap5.5","gap8.1","gap8.2","gap8.3")
 val_Organisasi<-cbind(valOrganisasi,valGAPorg)
-tempOrganisasi<-as.data.frame(t(val_Organisasi))
+tempOrganisasi<-as.data.frame((val_Organisasi))
 
 indikatorOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
 tes2 <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
 colnames(tes2)<-"Indikator"
 result_Organisasi <-cbind(tes2,tempOrganisasi)
-
+i=1
+j=5
 Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
 org4.1<-mean(as.numeric(tempOrganisasi[1,i:j]))
 org4.2<-mean(as.numeric(tempOrganisasi[2,i:j]))
