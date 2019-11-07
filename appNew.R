@@ -13,7 +13,7 @@ library(rlang)
 library(dplyr)
 
 ###*setup dashboard page####
-ui <- source('interface.R')
+ui <- source('interfaceNew.R')
 
 # Define server logic required to draw a histogram
 server <- function(input, output, session) {
@@ -21,7 +21,7 @@ server <- function(input, output, session) {
   
   ###SISTEM###
   output$resTblSys <- renderDataTable({
-   
+    
     inputSys<-readRDS("data/fileSys")
     
     inputSys$intro00<-NULL;inputSys$intro0a2<-NULL; inputSys$logo0<-NULL; inputSys$logo<-NULL; inputSys$intro0<-NULL; inputSys$intro0a<-NULL; inputSys$url_widget2<-NULL; inputSys$intro1<-NULL;
@@ -236,7 +236,7 @@ server <- function(input, output, session) {
     gap6<-5-Level6
     tingkatInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
     colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
-
+    
     ##BAR Chart
     valInd <- filter(valInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
     Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
@@ -345,11 +345,11 @@ server <- function(input, output, session) {
     t_summTempSistem <- t(summTempSistem[2:length(summTempSistem)])
     provSys <- rowMeans(t_summTempSistem)
     prioritasSys<-NULL
-    if (provSys[1]<=1) {
+    if (provSys<=1) {
       prioritasSys = "Prioritas sangat tinggi"
-    } else if (provSys[1]<=2) {
+    } else if (provSys<=2) {
       prioritasSys = "Prioritas tinggi"
-    } else if (provSys[1]<=3) {
+    } else if (provSys<=3) {
       prioritasSys = "Prioritas rendah"
     } else {
       prioritasSys = "Tidak prioritas"
@@ -421,18 +421,18 @@ server <- function(input, output, session) {
     Ind8.1<-mean(summTempOrganisasi$q8.1);Ind8.2<-mean(summTempOrganisasi$q8.2);Ind8.3<-mean(summTempOrganisasi$q8.3)
     provOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
     prioritasOrg<-NULL
-    if (provOrg[1]<=1) {
+    if (provOrg<=1) {
       prioritasOrg = "Prioritas sangat tinggi"
-    } else if (provOrg[1]<=2) {
+    } else if (provOrg<=2) {
       prioritasOrg = "Prioritas tinggi"
-    } else if (provOrg[1]<=3) {
+    } else if (provOrg<=3) {
       prioritasOrg = "Prioritas rendah"
     } else {
       prioritasOrg = "Tidak prioritas"
     }
     tabelOrg<-cbind(summIndikatorOrg,provOrg,prioritasOrg)
     colnames(tabelOrg)<-c("Indikator","Level","Prioritas")
-   
+    
     
     ##Individu
     # summInputInd<-readRDS("data/fileInd")
@@ -478,11 +478,11 @@ server <- function(input, output, session) {
     Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
     provInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
     prioritasInd <- NULL
-    if (provInd[1]<=1) {
+    if (provInd<=1) {
       prioritasInd = "Prioritas sangat tinggi"
-    } else if (provInd[1]<=2) {
+    } else if (provInd<=2) {
       prioritasInd = "Prioritas tinggi"
-    } else if (provInd[1]<=3) {
+    } else if (provInd<=3) {
       prioritasInd = "Prioritas rendah"
     } else {
       prioritasInd = "Tidak prioritas"
@@ -537,7 +537,7 @@ server <- function(input, output, session) {
   # observeEvent(input$exportInd, {
   #   saveData(tablesCDA$tableIndividu)
   # })
-
+  
   
 }
 

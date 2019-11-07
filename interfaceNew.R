@@ -123,7 +123,7 @@ dashboardPage(
       #           )
       #         )
       # ),
-
+      
       tabItem(tabName = "resTblSys",
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys"),
@@ -140,7 +140,7 @@ dashboardPage(
               plotlyOutput("resChartInd"),
               actionButton("expInd", "Export")
       ),
-
+      
       ###*tab-ringkasan####
       tabItem(tabName = "resTblSumm",
               dataTableOutput("resTblSumm"),
