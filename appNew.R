@@ -19,6 +19,8 @@ ui <- source('interfaceNew.R')
 server <- function(input, output, session) {
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame())
   
+  observeEvent(input$inputSetting,
+               showModal(ui=modalDialog("Data berhasil tersimpan", footer = modalButton("Close")), session=session))
   ###SISTEM###
   output$resTblSys <- renderDataTable({
     

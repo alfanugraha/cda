@@ -80,9 +80,9 @@ dashboardPage(
                                         # actionButton("expInd", "Export")
                                ),
                                menuItem("Rangkuman", icon = icon("list-alt"), 
-                                        menuSubItem("Hasil Analisis Keseluruhan", tabName = "resTblSumm"),
+                                        menuSubItem("Hasil Analisis", tabName = "resTblSumm")
                                         # actionButton("submitInd", "Submit")
-                                        actionButton("exportSummary", "Export")
+                                        # actionButton("exportSummary", "Export")
                                ),
                                menuItem("Bantuan", icon = icon("info-circle"), tabName="help")
                              )
