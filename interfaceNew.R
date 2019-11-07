@@ -61,7 +61,7 @@ dashboardPage(
                                         actionButton("inputSetting", label = "Simpan")
                                ),
                                menuItem("Sistem", icon = icon("sitemap"), 
-                                        menuSubItem("Hasil Analisis", tabName = "resTblSys")
+                                        menuSubItem("Hasil Analisis", tabName = "resTbl")
                                         # actionButton("submitSys", "Submit")
                                         # actionButton("expSys", "Export")
                                ),
@@ -124,7 +124,7 @@ dashboardPage(
       #         )
       # ),
       
-      tabItem(tabName = "resTblSys",
+      tabItem(tabName = "resTbl",
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys"),
               actionButton("expSys", "Export")

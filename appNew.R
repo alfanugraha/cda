@@ -11,6 +11,7 @@ library(readxl)
 library(magrittr)
 library(rlang)
 library(dplyr)
+library(DT)
 
 ###*setup dashboard page####
 ui <- source('interfaceNew.R')
@@ -86,7 +87,7 @@ server <- function(input, output, session) {
     colnames(graphSistem)<-c("Indikator","Level","GAP")
     tablesCDA$summarySystem <- graphSistem
     
-    tingkatSys
+    datatable(tingkatSys,escape = FALSE, rownames = FALSE)
   })
   
   output$resChartSys <- renderPlotly({
@@ -165,7 +166,7 @@ server <- function(input, output, session) {
     colnames(graphOrg)<-c("Indikator","Level","GAP")
     tablesCDA$summaryOrg <- graphOrg
     
-    tingkatOrg
+    datatable(tingkatOrg,escape = FALSE, rownames = FALSE)
   })
   
   output$resChartOrg <- renderPlotly({
@@ -248,7 +249,7 @@ server <- function(input, output, session) {
     colnames(graphInd)<-c("Indikator","Level","GAP")
     tablesCDA$summaryInd <- graphInd
     
-    tingkatInd
+    datatable(tingkatInd,escape = FALSE, rownames = FALSE)
   })
   
   output$resChartInd <- renderPlotly({
@@ -509,7 +510,8 @@ server <- function(input, output, session) {
     rownames(summary)<-1:9
     tablesCDA$allSummary <- summary
     
-    prioritas
+    datatable(prioritas,escape = FALSE, rownames = FALSE)
+    
   })
   
   output$resChartSumm <- renderPlotly({
@@ -539,7 +541,6 @@ server <- function(input, output, session) {
   # observeEvent(input$exportInd, {
   #   saveData(tablesCDA$tableIndividu)
   # })
-  
   
 }
 
