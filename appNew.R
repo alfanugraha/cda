@@ -23,7 +23,7 @@ server <- function(input, output, session) {
   observeEvent(input$inputSetting, {
     showModal(ui=modalDialog("Data berhasil tersimpan", easyClose = TRUE), session=session)
   })
-  ####SISTEM####
+  ####MENU SISTEM####
   output$resTblSys <- renderDataTable({
     
     inputSys<-readRDS("data/fileSys")
@@ -98,7 +98,7 @@ server <- function(input, output, session) {
       layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
   })
   
-  ####ORGANISASI####
+  ####MENU ORGANISASI####
   output$resTblOrg <- renderDataTable({
     inputOrg<-readRDS("data/fileOrg")
     
@@ -141,8 +141,8 @@ server <- function(input, output, session) {
     colnames(indikatorOrg)<-"Indikator"
     
     #Menampilkan hasil OPD
-    # tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince & inputOrg$institusi==input$selectizeInstitution) #buat field insitution
-    tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi=="Bengkulu" & inputOrg$institusi=="Bappeda provinsi Bengkulu")
+    tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince & inputOrg$institusi==input$selectizeInstitution) #buat field insitution
+    #tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi=="Bengkulu" & inputOrg$institusi=="Bappeda provinsi Bengkulu")
     
     #Hasi per Aspek
     Level4<-rowSums(tempOrganisasi[,4:10])/length(tempOrganisasi[,4:10])
@@ -200,7 +200,7 @@ server <- function(input, output, session) {
     ), multiple=FALSE)
   })
   
-  ####INDIVIDU####
+  ####MENU INDIVIDU####
   output$resTblInd <- renderDataTable({
     inputInd<-readRDS("data/fileInd")
     
@@ -232,7 +232,7 @@ server <- function(input, output, session) {
     indikatorInd  <- as.data.frame(indikatorInd)
     
     tempIndividu<-filter(inputInd,inputInd$provinsi==input$categoryProvince & inputInd$nama==input$selectizeName)
-    tempIndividu<-filter(inputInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
+    #tempIndividu<-filter(inputInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
     
     #Hasil per Aspek
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
@@ -283,14 +283,11 @@ server <- function(input, output, session) {
     ), multiple=FALSE)
   })
   
-  ###RANGKUMAN###
-  summInputSys<-readRDS("data/fileSys")
-  summInputOrg<-readRDS("data/fileOrg")
-  summInputInd<-readRDS("data/fileInd")
+  ####RANGKUMAN####
   
   output$resTblSumm <- renderDataTable({
-    ##Sistem
-    # summInputSys<-readRDS("data/fileSys")
+    ####Sistem####
+    summInputSys<-readRDS("data/fileSys")
     
     summInputSys$intro00<-NULL;summInputSys$intro0a2<-NULL; summInputSys$logo0<-NULL; summInputSys$logo<-NULL; summInputSys$intro0<-NULL; summInputSys$intro0a<-NULL; summInputSys$url_widget2<-NULL; summInputSys$intro1<-NULL;
     summInputSys$X_index<-NULL;summInputSys$X_validation_status<-NULL; summInputSys$X_submission_time<-NULL; summInputSys$X_uuid<-NULL; summInputSys$X_id<-NULL
@@ -332,7 +329,7 @@ server <- function(input, output, session) {
     summIndikatorSys <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
     
     #Menampilkan hasil satu provinsi
-    summTempSistem<-filter(summTempSistem,Provinsi==input$categoryProvince)
+    summTempSistem<-filter(summTempSistem,summInputSys$provinsi==input$categoryProvince)
     # summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
     
     #Hasil per Aspek
@@ -357,8 +354,8 @@ server <- function(input, output, session) {
     
     colnames(tabelSys)<-c("Indikator","Level","Prioritas")
     
-    ##Organisasi
-    # summInputOrg<-readRDS("data/fileOrg")
+    ####Organisasi####
+    summInputOrg<-readRDS("data/fileOrg")
     
     summInputOrg$intro00<-NULL; summInputOrg$intro0a2<-NULL; summInputOrg$logo0<-NULL; summInputOrg$logo<-NULL; summInputOrg$intro0<-NULL; summInputOrg$intro0a<-NULL
     summInputOrg$url_widget2<-NULL; summInputOrg$intro1a<-NULL; summInputOrg$jabatan<-NULL
@@ -420,22 +417,17 @@ server <- function(input, output, session) {
     Ind5.1<-mean(summTempOrganisasi$q5.1); Ind5.2<-mean(summTempOrganisasi$q5.2); Ind5.3<-mean(summTempOrganisasi$q5.3); Ind5.4<-mean(summTempOrganisasi$q5.4); Ind5.5<-mean(summTempOrganisasi$q5.5)
     Ind8.1<-mean(summTempOrganisasi$q8.1);Ind8.2<-mean(summTempOrganisasi$q8.2);Ind8.3<-mean(summTempOrganisasi$q8.3)
     provOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
-    prioritasOrg<-NULL
-    if (provOrg<=1) {
-      prioritasOrg = "Prioritas sangat tinggi"
-    } else if (provOrg<=2) {
-      prioritasOrg = "Prioritas tinggi"
-    } else if (provOrg<=3) {
-      prioritasOrg = "Prioritas rendah"
-    } else {
-      prioritasOrg = "Tidak prioritas"
-    }
-    tabelOrg<-cbind(summIndikatorOrg,provOrg,prioritasOrg)
+    
+    tabelOrg<-cbind(summIndikatorOrg,provOrg)
+    tabelOrg$prioritasOrg <- "Tidak prioritas" 
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=3, "Prioritas rendah", prioritasOrg)})
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=2, "Prioritas tinggi", prioritasOrg)})
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=1, "Prioritas sangat tinggi", prioritasOrg)})
+    
     colnames(tabelOrg)<-c("Indikator","Level","Prioritas")
     
-    
-    ##Individu
-    # summInputInd<-readRDS("data/fileInd")
+    ####Individu####
+    summInputInd<-readRDS("data/fileInd")
     
     summInputInd$intro00<-NULL; summInputInd$intro0a2<-NULL; summInputInd$logo0<-NULL; summInputInd$logo<-NULL; summInputInd$intro0<-NULL; summInputInd$intro0a<-NULL; summInputInd$intro1a<-NULL
     summInputInd$gender<-NULL; summInputInd$jabatan<-NULL; summInputInd$akun <- NULL; #summInputInd$tanggal<-NULL
@@ -477,17 +469,13 @@ server <- function(input, output, session) {
     #Hasil per indikator dan prioritas
     Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
     provInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
-    prioritasInd <- NULL
-    if (provInd<=1) {
-      prioritasInd = "Prioritas sangat tinggi"
-    } else if (provInd<=2) {
-      prioritasInd = "Prioritas tinggi"
-    } else if (provInd<=3) {
-      prioritasInd = "Prioritas rendah"
-    } else {
-      prioritasInd = "Tidak prioritas"
-    }
-    tabelInd<-cbind(summIndikatorInd,provInd,prioritasInd)
+    
+    tabelInd<-cbind(summIndikatorInd,provInd)
+    tabelInd$prioritasInd <- "Tidak prioritas" 
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=3, "Prioritas rendah", prioritasInd)})
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=2, "Prioritas tinggi", prioritasInd)})
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=1, "Prioritas sangat tinggi", prioritasInd)})
+    
     colnames(tabelInd)<-c("Indikator","Level","Prioritas")
     
     ##Tabel Prioritas

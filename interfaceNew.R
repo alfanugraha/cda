@@ -1,23 +1,18 @@
-# provinces <- c("Aceh","Sumatera Utara","Sumatera Barat","Riau","Kepulauan Riau","Jambi","Sumatera Selatan","Bangka Belitung","Bengkulu","Lampung","DKI Jakarta",
-#             "Jawa Barat","Banten","Jawa Tengah","Daerah Istimewa Yogyakarta","Jawa Timur","Bali","Nusa Tenggara Barat","Nusa Tenggara Timur","Kalimantan Utara",
-#             "Kalimantan Barat","Kalimantan Tengah","Kalimantan Selatan","Kalimantan Timur","Sulawesi Utara","Sulawesi Barat","Sulawesi Tengah","Sulawesi Tenggara",
-#             "Sulawesi Selatan","Gorontalo","Maluku","Maluku Utara","Papua Barat","Papua")
-
-#Sort by Name
-provinces<- c("Aceh", "Bali", "Bangka Belitung", "Banten", "Bengkulu", "Daerah Istimewa Yogyakarta", "DKI Jakarta", "Gorontalo", "Jambi", "Jawa Barat", "Jawa Tengah",
-              "Jawa Timur", "Kalimantan Barat","Kalimantan Selatan", "Kalimantah Tengah", "Kalimantan Timur", "Kalimantan Utara", "Kepulauan Riau", "Lampung", "Maluku", 
-              "Maluku Utara", "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Papua", "Papua Barat", "Riau", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tengah", 
-              "Sulawesi Tenggara", "Sulawesi Utara", "Sumatera Barat", "Sumatera Selatan", "Sumatera Utara")
-
-##Mandatory Field
-fieldsMandatory <- c("name","favourite_pkg")
-labelMandatory <- function(label) {
-  tagList(
-    label,
-    span("*", class = "mandatory_star")
-  )
-}
-appCSS <- ".mandatory_star { color: red; }"
+# #Sort by Name
+# provinces<- c("Aceh", "Bali", "Bangka Belitung", "Banten", "Bengkulu", "Daerah Istimewa Yogyakarta", "DKI Jakarta", "Gorontalo", "Jambi", "Jawa Barat", "Jawa Tengah",
+#               "Jawa Timur", "Kalimantan Barat","Kalimantan Selatan", "Kalimantah Tengah", "Kalimantan Timur", "Kalimantan Utara", "Kepulauan Riau", "Lampung", "Maluku", 
+#               "Maluku Utara", "Nusa Tenggara Barat", "Nusa Tenggara Timur", "Papua", "Papua Barat", "Riau", "Sulawesi Barat", "Sulawesi Selatan", "Sulawesi Tengah", 
+#               "Sulawesi Tenggara", "Sulawesi Utara", "Sumatera Barat", "Sumatera Selatan", "Sumatera Utara")
+# 
+# ##Mandatory Field
+# fieldsMandatory <- c("name","favourite_pkg")
+# labelMandatory <- function(label) {
+#   tagList(
+#     label,
+#     span("*", class = "mandatory_star")
+#   )
+# }
+# appCSS <- ".mandatory_star { color: red; }"
 
 dashboardPage(
   skin = 'black', 
@@ -27,6 +22,7 @@ dashboardPage(
   ###*sidebar####
   sidebar = dashboardSidebar(width = "300px",
                              sidebarMenu(
+                               ###sidebar-home####
                                menuItem("Beranda", icon = icon("home"), tabName = "home"),
                                ###sidebar-profil####
                                # menuItem("Profil", tabName = "profil"),
@@ -40,6 +36,7 @@ dashboardPage(
                                #          menuSubItem(tabName = "Sistem"),
                                #          menuSubItem(tabname = "Organisasi"),
                                #          menuSubItem(tabName =  "Individu")),
+                               ###sidebar-pengaturan####
                                menuItem("Pengaturan", icon = icon("cogs"),
                                         selectInput("categoryProvince", label = "Pilih provinsi", 
                                                     list(`Barat` = list("Aceh", "Bangka Belitung", "Bengkulu", "Jambi", "Kepulauan Riau",
@@ -60,6 +57,7 @@ dashboardPage(
                                         passwordInput("password", label = "Masukkan password", value = "", width=NULL,placeholder=NULL),
                                         actionButton("inputSetting", label = "Simpan")
                                ),
+                               ###sidebar-sistem####
                                menuItem("Sistem", icon = icon("sitemap"), 
                                         menuSubItem("Hasil Analisis", tabName = "resTbl")
                                         # actionButton("submitSys", "Submit")
@@ -79,11 +77,13 @@ dashboardPage(
                                         # actionButton("submitInd", "Submit")
                                         # actionButton("expInd", "Export")
                                ),
+                               ###sidebar-rangkuman####
                                menuItem("Rangkuman", icon = icon("list-alt"), 
                                         menuSubItem("Hasil Analisis", tabName = "resTblSumm")
                                         # actionButton("submitInd", "Submit")
                                         # actionButton("exportSummary", "Export")
                                ),
+                               ###sidebar-bantuan####
                                menuItem("Bantuan", icon = icon("info-circle"), tabName="help")
                              )
   ),
@@ -91,10 +91,10 @@ dashboardPage(
   ###*body####
   body = dashboardBody(
     tabItems(
+      ###*tab-home####
       tabItem(tabName = "home",
               jumbotron(img(src="homepage.jpg", width="100%"), " ", button = FALSE)
       ),
-      ###*tab-home####
       # tabItem(tabName = "home", jumbotron(img(src="ps3.png"), " ", button=FALSE), jumbotron(img(src="tingkatan.png"), " ", button=FALSE)
       # hr(),
       # fluidRow(
@@ -106,8 +106,7 @@ dashboardPage(
       tabItem(tabName = "home",
               leafletOutput("koboMap")
       ),
-      ###*tab-profil
-      
+      ###*tab-pengaturan####
       # tabItem(tabName = "profil",
       #         fluidPage(#theme = shinytheme("cyborg"),
       #           shinyjs::useShinyjs(),
@@ -123,31 +122,30 @@ dashboardPage(
       #           )
       #         )
       # ),
-      
+      ###*tab-sistem####
       tabItem(tabName = "resTbl",
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys"),
               actionButton("expSys", "Export")
       ),
-      
+      ###*tab-organisasi####
       tabItem(tabName = "resTblOrg",
               dataTableOutput("resTblOrg"),
               plotlyOutput("resChartOrg"),
               actionButton("expOrg", "Export")
       ),
+      ###*tab-individu####
       tabItem(tabName = "resTblInd",
               dataTableOutput("resTblInd"),
               plotlyOutput("resChartInd"),
               actionButton("expInd", "Export")
       ),
-      
-      ###*tab-ringkasan####
+      ###*tab-rangkuman####
       tabItem(tabName = "resTblSumm",
               dataTableOutput("resTblSumm"),
               plotlyOutput("resChartSumm"),
               actionButton("exportSummary", "Export")
       ),
-      
       ###*tab-help####
       tabItem(tabName = "help"
       )
