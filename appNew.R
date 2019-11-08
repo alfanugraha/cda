@@ -20,9 +20,10 @@ ui <- source('interfaceNew.R')
 server <- function(input, output, session) {
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame())
   
-  observeEvent(input$inputSetting,
-               showModal(ui=modalDialog("Data berhasil tersimpan", footer = modalButton("Close")), session=session))
-  ###SISTEM###
+  observeEvent(input$inputSetting, {
+    showModal(ui=modalDialog("Data berhasil tersimpan", easyClose = TRUE), session=session)
+  })
+  ####SISTEM####
   output$resTblSys <- renderDataTable({
     
     inputSys<-readRDS("data/fileSys")
@@ -97,7 +98,7 @@ server <- function(input, output, session) {
       layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
   })
   
-  ###ORGANISASI###
+  ####ORGANISASI####
   output$resTblOrg <- renderDataTable({
     inputOrg<-readRDS("data/fileOrg")
     
@@ -199,7 +200,7 @@ server <- function(input, output, session) {
     ), multiple=FALSE)
   })
   
-  ###INDIVIDU###
+  ####INDIVIDU####
   output$resTblInd <- renderDataTable({
     inputInd<-readRDS("data/fileInd")
     
@@ -347,17 +348,13 @@ server <- function(input, output, session) {
     #Hasil per indikator & prioritas
     t_summTempSistem <- t(summTempSistem[2:length(summTempSistem)])
     provSys <- rowMeans(t_summTempSistem)
-    prioritasSys<-NULL
-    if (provSys<=1) {
-      prioritasSys = "Prioritas sangat tinggi"
-    } else if (provSys<=2) {
-      prioritasSys = "Prioritas tinggi"
-    } else if (provSys<=3) {
-      prioritasSys = "Prioritas rendah"
-    } else {
-      prioritasSys = "Tidak prioritas"
-    }
-    tabelSys<-cbind(summIndikatorSys,provSys, prioritasSys)
+    
+    tabelSys<-cbind(summIndikatorSys,provSys)
+    tabelSys$prioritasSys <- "Tidak prioritas" 
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=3, "Prioritas rendah", prioritasSys)})
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=2, "Prioritas tinggi", prioritasSys)})
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=1, "Prioritas sangat tinggi", prioritasSys)})
+    
     colnames(tabelSys)<-c("Indikator","Level","Prioritas")
     
     ##Organisasi
