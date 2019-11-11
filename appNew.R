@@ -67,23 +67,25 @@ server <- function(input, output, session) {
     file_indSys<- read.table("init/system.csv", header=TRUE, sep=",")
     indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
     
-    #Menampilkan hasil satu responden
+    ##Menampilkan hasil satu provinsi####
     tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
-    # tempSistem<-filter(tempSistem,Provinsi=="Nusa Tenggara Barat")
+    tempSistem<-filter(tempSistem,Provinsi=="Aceh")
     
-    #Hasil per Aspek
-    Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+    ##Membuat tabel Level setiap aspek####
+    aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
     LevelReg<-mean(as.matrix(tempSistem[,2:3])); LevelInt<-mean(as.matrix(tempSistem[4:8])); LevelProses<-mean(as.matrix(tempSistem[9:13])); LevelData<-mean(as.matrix(tempSistem[14:16])); LevelPEP<-mean(as.matrix(tempSistem[17:20]))
     allLevelSys<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
-    # gapReg<-mean(as.matrix(tempSistem[21:22])); gapInt<-mean(as.matrix(tempSistem[23:27])); gapProses<-mean(as.matrix(tempSistem[28:32])); gapData<-mean(as.matrix(tempSistem[33:35])); gapPEP<-mean(as.matrix(tempSistem[36:39]))
+    allLevelSys<-round(allLevelSys,digits = 2)
     gapReg<-5-LevelReg; gapInt<-5-LevelInt; gapProses<-5-LevelProses; gapData<-5-LevelData; gapPEP<-5-LevelPEP
     allGapSys<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    tingkatSys<-as.data.frame(cbind(Indikator_Penilaian, allLevelSys, allGapSys))
+    allGapSys<-round(allGapSys, digits=2)
+    tingkatSys<-as.data.frame(cbind(aspekSys, allLevelSys, allGapSys))
     colnames(tingkatSys)<-c("Aspek Penilaian","Level","GAP")
     
-    ##BAR CHART
+    ##Membuat bar chart untuk tingkat Sistem####
     t_tempSistem <- t(tempSistem[2:length(tempSistem)])
     provSys <- rowMeans(t_tempSistem)
+    provSys<-round(provSys, digits = 2)
     graphSistem<-cbind(indikatorSys,provSys[1:19],provSys[20:38])
     colnames(graphSistem)<-c("Indikator","Level","GAP")
     tablesCDA$summarySystem <- graphSistem
@@ -140,11 +142,11 @@ server <- function(input, output, session) {
     indikatorOrg <- as.data.frame(unique(file_indOrg$Kapasitas_Fungsional))
     colnames(indikatorOrg)<-"Indikator"
     
-    #Menampilkan hasil OPD
+    ##Menampilkan hasil OPD per provinsi####
     tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince & inputOrg$institusi==input$selectizeInstitution) #buat field insitution
     #tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi=="Bengkulu" & inputOrg$institusi=="Bappeda provinsi Bengkulu")
     
-    #Hasi per Aspek
+    ##Membuat tabel Level setiap aspek####
     Level4<-rowSums(tempOrganisasi[,4:10])/length(tempOrganisasi[,4:10])
     LevelOrg<-mean(Level4)
     Level5 <- rowSums(tempOrganisasi[,11:15])/length(tempOrganisasi[,11:15])
@@ -152,17 +154,21 @@ server <- function(input, output, session) {
     Level8 <- rowSums(tempOrganisasi[,16:18])/length(tempOrganisasi[,16:18])
     LevelTek<-mean(Level8)
     LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
+    LevelOrg_gabungan<-round(LevelOrg_gabungan,digits = 2)
     gapOrg_gabungan<-5-LevelOrg_gabungan
-    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
-    tingkatOrg<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
+    gapOrg_gabungan<-round(gapOrg_gabungan,digits = 2)
+    aspekOrg<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
+    tingkatOrg<-as.data.frame(cbind(aspekOrg, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(tingkatOrg)<- c("Aspek Penilaian", "Level", "GAP")
     
-    #Bar Chart
+    ##Membuat bar chart untuk tingkat Organisasi####
     Ind4.1<-mean(tempOrganisasi$q4.1); Ind4.2<-mean(tempOrganisasi$q4.2); Ind4.3<-mean(tempOrganisasi$q4.3); Ind4.4<-mean(tempOrganisasi$q4.4); Ind4.5<-mean(tempOrganisasi$q4.5); Ind4.6<-mean(tempOrganisasi$q4.6); Ind4.7<-mean(tempOrganisasi$q4.7)
     Ind5.1<-mean(tempOrganisasi$q5.1); Ind5.2<-mean(tempOrganisasi$q5.2); Ind5.3<-mean(tempOrganisasi$q5.3); Ind5.4<-mean(tempOrganisasi$q5.4); Ind5.5<-mean(tempOrganisasi$q5.5)
     Ind8.1<-mean(tempOrganisasi$q8.1);Ind8.2<-mean(tempOrganisasi$q8.2);Ind8.3<-mean(tempOrganisasi$q8.3)
     tempLevelOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    tempLevelOrg<-round(tempLevelOrg,digits = 2)
     tempGapOrg<- 5-tempLevelOrg
+    tempGapOrg<-round(tempGapOrg, digits = 2)
     graphOrg<-cbind(indikatorOrg,tempLevelOrg,tempGapOrg)
     colnames(graphOrg)<-c("Indikator","Level","GAP")
     tablesCDA$summaryOrg <- graphOrg
@@ -231,21 +237,25 @@ server <- function(input, output, session) {
     indikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     indikatorInd  <- as.data.frame(indikatorInd)
     
-    tempIndividu<-filter(inputInd,inputInd$provinsi==input$categoryProvince & inputInd$nama==input$selectizeName)
-    #tempIndividu<-filter(inputInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
+    ##Menampilkan hasil satu induvidu per provinsi####
+    tempIndividu<-filter(valInd,valInd$`inputInd$provinsi`==input$categoryProvince & valInd$`inputInd$nama`==input$selectizeName)
+    tempIndividu<-filter(valInd,valInd$`inputInd$provinsi`=="Aceh" & valInd$`inputInd$nama`=="Yumna")
     
-    #Hasil per Aspek
-    Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    Level6<-rowMeans(tempIndividu[7:length(tempIndividu)])
+    ##Membuat tabel Level setiap aspek####
+    aspekInd<-"6. Sumber Daya Manusia - Individu"
+    Level6<-rowMeans(tempIndividu[3:length(tempIndividu)])
+    Level6<-round(Level6, digits = 2)
     gap6<-5-Level6
-    tingkatInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
+    gap6<-round(gap6, digits = 2)
+    tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
     colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
     
-    ##BAR Chart
-    valInd <- filter(valInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
-    Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
+    ##Membuat bar chart untuk tingkat Organisasi####
+    Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
     tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
-    tempGapInd <- 5 - tempLevelInd
+    tempLevelInd<-round(tempLevelInd, digits = 2)
+    tempGapInd<-5-tempLevelInd
+    tempGapInd<-round(tempGapInd,digits = 2)
     graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
     colnames(graphInd)<-c("Indikator","Level","GAP")
     tablesCDA$summaryInd <- graphInd
@@ -283,10 +293,10 @@ server <- function(input, output, session) {
     ), multiple=FALSE)
   })
   
-  ####RANGKUMAN####
+  ####MENU RANGKUMAN####
   
   output$resTblSumm <- renderDataTable({
-    ####Sistem####
+    ####RANGKUMAN TINGKAT SISTEM####
     summInputSys<-readRDS("data/fileSys")
     
     summInputSys$intro00<-NULL;summInputSys$intro0a2<-NULL; summInputSys$logo0<-NULL; summInputSys$logo<-NULL; summInputSys$intro0<-NULL; summInputSys$intro0a<-NULL; summInputSys$url_widget2<-NULL; summInputSys$intro1<-NULL;
@@ -317,34 +327,29 @@ server <- function(input, output, session) {
     
     summLevelSistem<-cbind(summInputSys$provinsi_001,summSys$q1.1,summSys$q1.2,summSys$q2.1,summSys$q2.2,summSys$q2.3, summSys$q2.4, q2.5,summSys$q3.1,summSys$q3.2,summSys$q3.3,summSys$q3.4,summSys$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
     colnames(summLevelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
-    
-    # gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
-    # gap_3.1<-5-levelSistem$q3.1; gap_3.2<-5-levelSistem$q3.2; gap_3.3<-5-levelSistem$q3.3; gap_3.4<-5-levelSistem$q3.4; gap_3.5<-5-levelSistem$q3.5
-    # gap_7.1<-5-levelSistem$q7.1; gap_7.2<-5-levelSistem$q7.2; gap_7.3<-5-levelSistem$q7.3; gap_9.1<-5-levelSistem$q9.1; gap_9.2<-5-levelSistem$q9.2; gap_9.3<-5-levelSistem$q9.3
-    # valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
-    # val_Sistem<-cbind(levelSistem,valGAP)
     summTempSistem<-as.data.frame((summLevelSistem))
     
     indikatorSistem <- read.table("init/system.csv", header=TRUE, sep=",")
     summIndikatorSys <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
     
-    #Menampilkan hasil satu provinsi
+    ##Menampilkan hasil satu provinsi untuk tingkat sistem####
     summTempSistem<-filter(summTempSistem,summInputSys$provinsi==input$categoryProvince)
     # summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
     
-    #Hasil per Aspek
-    Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+    ##Membuat tabel Level setiap aspek####    
+    aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
     LevelReg<-mean(as.matrix(summTempSistem[,2:3])); LevelInt<-mean(as.matrix(summTempSistem[4:8])); LevelProses<-mean(as.matrix(summTempSistem[9:13])); LevelData<-mean(as.matrix(summTempSistem[14:16])); LevelPEP<-mean(as.matrix(summTempSistem[17:20]))
     summ_allLevelSys<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
     #gapReg<-mean(as.matrix(tempSistem[21:22])); gapInt<-mean(as.matrix(tempSistem[23:27])); gapProses<-mean(as.matrix(tempSistem[28:32])); gapData<-mean(as.matrix(tempSistem[33:35])); gapPEP<-mean(as.matrix(tempSistem[36:39]))
     gapReg<-5-LevelReg; gapInt<-5-LevelInt; gapProses<-5-LevelProses; gapData<-5-LevelData; gapPEP<-5-LevelPEP
     summ_allGapSys<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    summSistem<-as.data.frame(cbind(Indikator_Penilaian, summ_allLevelSys, summ_allGapSys))
+    summSistem<-as.data.frame(cbind(aspekSys, summ_allLevelSys, summ_allGapSys))
     colnames(summSistem)<-c("Aspek Penilaian","Level","GAP")
     
-    #Hasil per indikator & prioritas
-    t_summTempSistem <- t(summTempSistem[2:length(summTempSistem)])
-    provSys <- rowMeans(t_summTempSistem)
+    ##Menampilkan level per indikator & prioritas####
+    t_summTempSistem<-t(summTempSistem[2:length(summTempSistem)])
+    provSys<-rowMeans(t_summTempSistem)
+    provSys<-round(provSys, digits = 2)
     
     tabelSys<-cbind(summIndikatorSys,provSys)
     tabelSys$prioritasSys <- "Tidak prioritas" 
@@ -354,7 +359,7 @@ server <- function(input, output, session) {
     
     colnames(tabelSys)<-c("Indikator","Level","Prioritas")
     
-    ####Organisasi####
+    ####RANGKUMAN TINGKAT ORGANISASI####
     summInputOrg<-readRDS("data/fileOrg")
     
     summInputOrg$intro00<-NULL; summInputOrg$intro0a2<-NULL; summInputOrg$logo0<-NULL; summInputOrg$logo<-NULL; summInputOrg$intro0<-NULL; summInputOrg$intro0a<-NULL
@@ -395,11 +400,11 @@ server <- function(input, output, session) {
     summIndikatorOrg <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
     colnames(summIndikatorOrg)<-"Indikator"
     
-    #Menampilkan hasil satu provinsi
+    ##Menampilkan hasil satu provinsi untuk tingkat organisasi####
     summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$provinsi==input$categoryProvince)
     # summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$provinsi=="Aceh")
     
-    #Hasil per aspek
+    ##Membuat tabel Level setiap aspek####    
     Level4<-rowSums(summTempOrganisasi[,4:10])/length(summTempOrganisasi[,4:10])
     LevelOrg<-mean(Level4)
     Level5 <- rowSums(summTempOrganisasi[,11:15])/length(summTempOrganisasi[,11:15])
@@ -412,21 +417,22 @@ server <- function(input, output, session) {
     summOrganisasi<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(summOrganisasi)<- c("Aspek Penilaian", "Level", "GAP")
     
-    #Hasil per indikator dan prioritas
+    ##Menampilkan level per indikator & prioritas####
     Ind4.1<-mean(summTempOrganisasi$q4.1); Ind4.2<-mean(summTempOrganisasi$q4.2); Ind4.3<-mean(summTempOrganisasi$q4.3); Ind4.4<-mean(summTempOrganisasi$q4.4); Ind4.5<-mean(summTempOrganisasi$q4.5); Ind4.6<-mean(summTempOrganisasi$q4.6); Ind4.7<-mean(summTempOrganisasi$q4.7)
     Ind5.1<-mean(summTempOrganisasi$q5.1); Ind5.2<-mean(summTempOrganisasi$q5.2); Ind5.3<-mean(summTempOrganisasi$q5.3); Ind5.4<-mean(summTempOrganisasi$q5.4); Ind5.5<-mean(summTempOrganisasi$q5.5)
     Ind8.1<-mean(summTempOrganisasi$q8.1);Ind8.2<-mean(summTempOrganisasi$q8.2);Ind8.3<-mean(summTempOrganisasi$q8.3)
-    provOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    provOrg<-as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    provOrg<-round(provOrg,digits = 2)
     
     tabelOrg<-cbind(summIndikatorOrg,provOrg)
-    tabelOrg$prioritasOrg <- "Tidak prioritas" 
+    tabelOrg$prioritasOrg<-"Tidak prioritas" 
     tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=3, "Prioritas rendah", prioritasOrg)})
     tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=2, "Prioritas tinggi", prioritasOrg)})
     tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=1, "Prioritas sangat tinggi", prioritasOrg)})
     
     colnames(tabelOrg)<-c("Indikator","Level","Prioritas")
     
-    ####Individu####
+    ####RANGKUMAN TINGKAT INDIVIDU####
     summInputInd<-readRDS("data/fileInd")
     
     summInputInd$intro00<-NULL; summInputInd$intro0a2<-NULL; summInputInd$logo0<-NULL; summInputInd$logo<-NULL; summInputInd$intro0<-NULL; summInputInd$intro0a<-NULL; summInputInd$intro1a<-NULL
@@ -459,16 +465,17 @@ server <- function(input, output, session) {
     summTempIndividu<-filter(summTempIndividu,summInputInd$provinsi==input$categoryProvince)
     # summTempIndividu<-filter(summTempIndividu,summInputInd$provinsi=="Aceh")
     
-    #Hasil per Aspek
+    ##Membuat tabel Level setiap aspek####    
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
     Level6<-mean(as.matrix(summTempIndividu[2:length(summTempIndividu)]))
     gap6<-5-Level6
     summIndividu<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
     colnames(summIndividu)<-c("Aspek Penilaian","Level","GAP")
     
-    #Hasil per indikator dan prioritas
+    ##Menampilkan level per indikator & prioritas####
     Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
-    provInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+    provInd<-as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+    provInd<-round(provInd, digits=2)
     
     tabelInd<-cbind(summIndikatorInd,provInd)
     tabelInd$prioritasInd <- "Tidak prioritas" 
@@ -478,19 +485,22 @@ server <- function(input, output, session) {
     
     colnames(tabelInd)<-c("Indikator","Level","Prioritas")
     
-    ##Tabel Prioritas
+    ###TABEL PRIORITAS SEMUA TINGKAT####
     allprioritas <- rbind(tabelSys,tabelOrg,tabelInd)
     prioritas <- allprioritas[order(allprioritas$Level),]
     
-    ##Gabungan
+    ###TABEL LEVEL PER ASPEK SEMUA TINGKAT####
     summary<-as.data.frame(rbind(summSistem, summOrganisasi, summIndividu))
     summary$`Aspek Penilaian`<-NULL
-    aspek<-c("Regulasi/peraturan daerah","Integrasi dalam Perencanaan Pembangunan Daerah", "Proses", "Data dan Informasi", "Pemantauan, Evaluasi, dan Pelaporan","Organisasi","Sumber Daya Manusia - Organisasi", "Teknologi", "Sumber Daya Manusia - Individu")
+    aspek<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan","4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi", "6. Sumber Daya Manusia - Individu")
     summary<-cbind(aspek,summary)
-    finalGAP<-as.data.frame(5-as.numeric(summary$Level))
-    summary$Level<-as.numeric(summary$Level)
-    summary<-as.data.frame(cbind(summary,finalGAP))
-    summary$GAP<-NULL
+    finalLevel<-as.numeric(summary$Level)
+    finalLevel<-round(finalLevel,digits = 2)
+    finalGAP<-as.data.frame(5-finalLevel)
+    finalGAP<-round(finalGAP, digits = 2)
+    # summary$Level<-as.numeric(summary$Level)
+    summary<-as.data.frame(cbind(summary$aspek,finalLevel, finalGAP))
+    # summary$GAP<-NULL
     colnames(summary)<-c("Aspek Penilaian", "Level", "GAP")
     rownames(summary)<-1:9
     tablesCDA$allSummary <- summary
@@ -500,11 +510,15 @@ server <- function(input, output, session) {
   })
   
   output$resChartSumm <- renderPlotly({
-    ###BAR CHART Summary
+    ###BAR CHART SEMUA TINGKAT####
     summary<-tablesCDA$allSummary
     plot_ly(summary, x=~`Aspek Penilaian`, y=~Level, type='bar', name='Level') %>%
       add_trace(y=~GAP, name='GAP') %>%
-      layout(yaxis = list(title='Nilai'), barmode='stack', title="Level dan Gap Penilaian Kapasitas Provinsi")
+      layout(
+        yaxis = list(title='Nilai'),
+        xaxis = list(title='Aspek Penilaian'),
+        barmode='stack', 
+        title="Level dan Gap Penilaian Kapasitas Provinsi")
   })
   
   # output$koboMap <- renderLeaflet({
