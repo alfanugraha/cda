@@ -5,7 +5,6 @@ library(shinyLP)
 library(shinyjs)
 library(ggplot2)
 library(plotly)
-
 library(leaflet)
 library(readxl)
 library(magrittr)
@@ -69,7 +68,7 @@ server <- function(input, output, session) {
     
     ##Menampilkan hasil satu provinsi####
     tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
-    tempSistem<-filter(tempSistem,Provinsi=="Aceh")
+    # tempSistem<-filter(tempSistem,Provinsi=="Aceh")
     
     ##Membuat tabel Level setiap aspek####
     aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
@@ -239,7 +238,7 @@ server <- function(input, output, session) {
     
     ##Menampilkan hasil satu induvidu per provinsi####
     tempIndividu<-filter(valInd,valInd$`inputInd$provinsi`==input$categoryProvince & valInd$`inputInd$nama`==input$selectizeName)
-    tempIndividu<-filter(valInd,valInd$`inputInd$provinsi`=="Aceh" & valInd$`inputInd$nama`=="Yumna")
+    # tempIndividu<-filter(valInd,valInd$`inputInd$provinsi`=="Aceh" & valInd$`inputInd$nama`=="Yumna")
     
     ##Membuat tabel Level setiap aspek####
     aspekInd<-"6. Sumber Daya Manusia - Individu"
@@ -250,7 +249,7 @@ server <- function(input, output, session) {
     tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
     colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
     
-    ##Membuat bar chart untuk tingkat Organisasi####
+    ##Membuat bar chart untuk tingkat Individu####
     Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
     tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
     tempLevelInd<-round(tempLevelInd, digits = 2)

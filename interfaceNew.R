@@ -52,8 +52,8 @@ dashboardPage(
                                         textInput("fullname", label = "Nama lengkap", value = NULL,
                                                   width = NULL, placeholder = "Tuliskan nama Anda"),
                                         # selectInput("institution", label="Pilih OPD", choices=c("OPD 1", "OPD 2", "OPD 3"), selected = NULL, multiple = FALSE),
-                                        textInput("username", label = "Nama Pengguna", value = "Masukkan username Anda",
-                                                  width = NULL, placeholder = NULL),
+                                        textInput("username", label = "Nama Pengguna", value = "",
+                                                  width = NULL, placeholder = "Masukkan username Anda"),
                                         passwordInput("password", label = "Masukkan password", value = "", width=NULL, placeholder="Masukkan password Anda"),
                                         actionButton("inputSetting", label = "Masuk")
                                ),
