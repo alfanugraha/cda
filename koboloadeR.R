@@ -1,17 +1,18 @@
 library(koboloadeR)
 library (dplyr)
+library(plotly)
 
 #Shiny app untuk menampilkan dan memgunduh data dari KoBo
 kobo_apps("data_viewer")
 
 #Mengunduh data secara langsung
-Sistem<-kobo_data_downloader("327419", "cdna2019:Icraf2019!")
-Organisasi<-kobo_data_downloader("327585", "cdna2019:Icraf2019!")
-Individu<-kobo_data_downloader("327418", "cdna2019:Icraf2019!")
+dataSistem<-kobo_data_downloader("327419", "cdna2019:Icraf2019!")
+dataOrganisasi<-kobo_data_downloader("327585", "cdna2019:Icraf2019!")
+dataIndividu<-kobo_data_downloader("327418", "cdna2019:Icraf2019!")
 
-saveRDS(Sistem, "fileSistem")
-saveRDS(Organisasi, "fileOrganisasi")
-saveRDS(Individu, "fileIndividu")
+saveRDS(dataSistem, "fileSistem")
+saveRDS(dataOrganisasi, "fileOrganisasi")
+saveRDS(dataIndividu, "fileIndividu")
 
 ### TINGKAT INDIVIDU ####
 inputIndividu<-readRDS("data/fileIndividu")
@@ -65,7 +66,7 @@ gap6<-round(gap6, digits = 2)
 tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
 colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
 
-##Membuat bar chart untuk tingkat Individu####
+##Membuat bar chart untuk tingkat Individu###
 Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
 tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
 tempLevelInd<-round(tempLevelInd, digits = 2)
@@ -138,8 +139,69 @@ for (i in 43:44){
   eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
 }
 
+inputOrganisasi[inputOrganisasi == "n/a"]  <- NA
+inputOrganisasi <- na.omit(inputOrganisasi)
+# inputOrganisasi<-as.data.frame(inputOrganisasi)
 
-### TINGKAT SISTEM ###
+organisasi<- as.data.frame(lapply(inputOrganisasi[,5:length(inputOrganisasi)], as.numeric))
+
+q4.1<-rowSums(organisasi[,1:2]); q4.1<- as.data.frame(q4.1)/2
+q4.2<-rowSums(organisasi[,3:5]); q4.2<- as.data.frame(q4.2)/3
+q4.3<-rowSums(organisasi[,6:7]); q4.3<- as.data.frame(q4.3)/2
+q4.4<-rowSums(organisasi[,8:11]); q4.4<- as.data.frame(q4.4)/4
+q4.5<-rowSums(organisasi[,12:14]); q4.5<- as.data.frame(q4.5)/3
+q4.6<-rowSums(organisasi[,15:16]); q4.6<- as.data.frame(q4.6)/2
+q4.7<-rowSums(organisasi[,17:23]); q4.7<- as.data.frame(q4.7)/7
+q5.1<-rowSums(organisasi[,24:30]); q5.1<- as.data.frame(q5.1)/7
+q5.2<-organisasi$sdm1.sdm3.q5.2; q5.3<-organisasi$sdm1.sdm4.q5.3
+q5.4<-rowSums(organisasi[,33:34]); q5.4<- as.data.frame(q5.4)/2
+q5.5<-rowSums(organisasi[,35:36]); q5.5<- as.data.frame(q5.5)/2
+q8.1<-rowSums(organisasi[,37:40]); q8.1<- as.data.frame(q8.1)/4
+q8.2<-rowSums(organisasi[,41:43]); q8.2<- as.data.frame(q8.2)/3
+q8.3<-rowSums(organisasi[,44:45]); q8.3<- as.data.frame(q8.3)/2
+valOrganisasi <- cbind(inputOrganisasi$`profil/provinsi`,inputOrganisasi$`profil/institusi`,inputOrganisasi$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+colnames(valOrganisasi)<-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
+tempOrganisasi<-as.data.frame(valOrganisasi)
+
+file_indOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
+indikatorOrg <- as.data.frame(unique(file_indOrg$Kapasitas_Fungsional))
+colnames(indikatorOrg)<-"Indikator"
+
+##Menampilkan hasil OPD per provinsi###
+tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi==input$categoryProvince & valOrganisasi$Institusi==input$selectizeInstitution) #buat field insitution
+tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi=="Sulawesi Selatan" & valOrganisasi$Institusi=="bappeda")
+
+##Membuat tabel Level setiap aspek###
+Level4<-rowSums(tempOrganisasi[,4:10])/length(tempOrganisasi[,4:10])
+LevelOrg<-mean(Level4)
+Level5 <- rowSums(tempOrganisasi[,11:15])/length(tempOrganisasi[,11:15])
+LevelSDM<-mean(Level5)
+Level8 <- rowSums(tempOrganisasi[,16:18])/length(tempOrganisasi[,16:18])
+LevelTek<-mean(Level8)
+LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
+LevelOrg_gabungan<-round(LevelOrg_gabungan,digits = 2)
+gapOrg_gabungan<-5-LevelOrg_gabungan
+gapOrg_gabungan<-round(gapOrg_gabungan,digits = 2)
+aspekOrg<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
+tingkatOrg<-as.data.frame(cbind(aspekOrg, LevelOrg_gabungan, gapOrg_gabungan))
+colnames(tingkatOrg)<- c("Aspek Penilaian", "Level", "GAP")
+
+##Membuat bar chart untuk tingkat Organisasi###
+Ind4.1<-mean(tempOrganisasi$q4.1); Ind4.2<-mean(tempOrganisasi$q4.2); Ind4.3<-mean(tempOrganisasi$q4.3); Ind4.4<-mean(tempOrganisasi$q4.4); Ind4.5<-mean(tempOrganisasi$q4.5); Ind4.6<-mean(tempOrganisasi$q4.6); Ind4.7<-mean(tempOrganisasi$q4.7)
+Ind5.1<-mean(tempOrganisasi$q5.1); Ind5.2<-mean(tempOrganisasi$q5.2); Ind5.3<-mean(tempOrganisasi$q5.3); Ind5.4<-mean(tempOrganisasi$q5.4); Ind5.5<-mean(tempOrganisasi$q5.5)
+Ind8.1<-mean(tempOrganisasi$q8.1);Ind8.2<-mean(tempOrganisasi$q8.2);Ind8.3<-mean(tempOrganisasi$q8.3)
+tempLevelOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+tempLevelOrg<-round(tempLevelOrg,digits = 2)
+tempGapOrg<- 5-tempLevelOrg
+tempGapOrg<-round(tempGapOrg, digits = 2)
+graphOrg<-cbind(indikatorOrg,tempLevelOrg,tempGapOrg)
+colnames(graphOrg)<-c("Indikator","Level","GAP")
+
+plot_ly(graphOrg, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+  add_trace(x=~GAP, name= 'GAP') %>%
+  layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Organisasi") 
+
+### TINGKAT SISTEM ####
 inputSistem<-readRDS("data/fileSistem")
 
 inputSistem$`meta/instanceID`<-NULL; inputSistem$`__version__`<-NULL; inputSistem$`_uuid`<-NULL; inputSistem$`_submission_time`<-NULL; inputSistem$`_tags`<-NULL; inputSistem$`_notes`<-NULL
@@ -184,3 +246,63 @@ for (i in 64:66){
 for (i in 67:68){
   eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
 }
+
+
+inputSistem<-as.data.frame(inputSistem)
+inputSistem$`pemantauan1/pemantauan3/q9.2.6`[inputSistem$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
+inputSistem$`pemantauan1/pemantauan5/q9.4.1`[inputSistem$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
+inputSistem$`pemantauan1/pemantauan5/q9.4.2`[inputSistem$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
+inputSistem[is.na(inputSistem)]<-3
+sistem<- as.data.frame(lapply(inputSistem[,3:length(inputSistem)], as.numeric))
+
+q2.5<-rowSums(sistem[,9:10]); q2.5<- as.data.frame(q2.5)/2
+q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
+q7.2 <- rowSums(sistem[,33:51]); q7.2<- as.data.frame(q7.2)/19
+q7.3<-rowSums(sistem[,52:53]); q7.3<-as.data.frame(q7.3)/2
+q9.1<-rowSums(sistem[,54:58]); q9.1<-as.data.frame(q9.1)/5
+q9.2<-rowSums(sistem[,59:64]); q9.2<-as.data.frame(q9.2)/6
+q9.3<-rowSums(sistem[,65:67]); q9.3<-as.data.frame(q9.3)/3
+q9.4<-rowSums(sistem[,68:69]); q9.4<-as.data.frame(q9.4)/2
+
+levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2, sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5,sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3 ,sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
+colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
+
+gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
+gap_3.1<-5-levelSistem$q3.1; gap_3.2<-5-levelSistem$q3.2; gap_3.3<-5-levelSistem$q3.3; gap_3.4<-5-levelSistem$q3.4; gap_3.5<-5-levelSistem$q3.5
+gap_7.1<-5-levelSistem$q7.1; gap_7.2<-5-levelSistem$q7.2; gap_7.3<-5-levelSistem$q7.3; gap_9.1<-5-levelSistem$q9.1; gap_9.2<-5-levelSistem$q9.2; gap_9.3<-5-levelSistem$q9.3; gap_9.4<-5-levelSistem$q9.4
+valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3,gap_9.4)
+valSistem<-cbind(levelSistem,valGAP)
+tempSistem<-as.data.frame((valSistem))
+
+file_indSys<- read.table("init/system.csv", header=TRUE, sep=",")
+indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
+
+##Menampilkan hasil satu provinsi###
+tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
+# tempSistem<-filter(tempSistem,Provinsi=="Aceh")
+
+##Membuat tabel Level setiap aspek###
+aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+LevelReg<-mean(as.matrix(tempSistem[,2:3])); LevelInt<-mean(as.matrix(tempSistem[4:8])); LevelProses<-mean(as.matrix(tempSistem[9:13])); LevelData<-mean(as.matrix(tempSistem[14:16])); LevelPEP<-mean(as.matrix(tempSistem[17:20]))
+allLevelSys<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
+allLevelSys<-round(allLevelSys,digits = 2)
+gapReg<-5-LevelReg; gapInt<-5-LevelInt; gapProses<-5-LevelProses; gapData<-5-LevelData; gapPEP<-5-LevelPEP
+allGapSys<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
+allGapSys<-round(allGapSys, digits=2)
+tingkatSys<-as.data.frame(cbind(aspekSys, allLevelSys, allGapSys))
+colnames(tingkatSys)<-c("Aspek Penilaian","Level","GAP")
+
+##Membuat bar chart untuk tingkat Sistem###
+t_tempSistem <- t(tempSistem[2:length(tempSistem)])
+provSys <- rowMeans(t_tempSistem)
+provSys<-round(provSys, digits = 2)
+graphSistem<-cbind(indikatorSys,provSys[1:19],provSys[20:38])
+colnames(graphSistem)<-c("Indikator","Level","GAP")
+
+plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+  add_trace(x=~GAP, name= 'GAP') %>%
+  layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
+
+
+
+### RINGKASAN ####
