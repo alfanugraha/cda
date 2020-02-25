@@ -43,37 +43,37 @@ dashboardPage(
                                                                         "Lampung", "Riau", "Sumatera Barat", "Sumatera Selatan", "Sumatera Utara"),
                                                          `Tengah` = list("Bali","Banten", "Jawa Barat",
                                                                          "Jawa Tengah","Jawa Timur","Kalimantan Barat",
-                                                                         "Kalimantan Selatan","Kalimantan Tengah",
+                                                                         "Kalimantan Selatan","Kalimantan Tengah", "Kalimantan Timur",
                                                                          "Nusa Tenggara Barat","Nusa Tenggara Timur","Yogyakarta"),
-                                                         `Timur` = list("Gorontalo", "Kalimantan Timur", "Maluku", "Maluku Utara",
+                                                         `Timur` = list("Gorontalo", "Maluku", "Maluku Utara",
                                                                         "Papua", "Papua Barat", "Sulawesi Selatan", "Sulawesi Tengah",
                                                                         "Sulawesi Tenggara", "Sulawesi Barat", "Sulawesi Utara"))
                                         ),
-                                        textInput("fullname", label = "Nama lengkap", value = NULL,
-                                                  width = NULL, placeholder = "Tuliskan nama Anda"),
                                         # selectInput("institution", label="Pilih OPD", choices=c("OPD 1", "OPD 2", "OPD 3"), selected = NULL, multiple = FALSE),
                                         textInput("username", label = "Nama Pengguna", value = "",
-                                                  width = NULL, placeholder = "Masukkan username Anda"),
-                                        passwordInput("password", label = "Masukkan password", value = "", width=NULL, placeholder="Masukkan password Anda"),
+                                                  width = NULL, placeholder = "Masukkan nama pengguna Anda"),
+                                        # passwordInput("password", label = "Kata Sandi", value = "", width=NULL, placeholder="Masukkan kata sandi Anda"),
                                         actionButton("inputSetting", label = "Masuk")
                                ),
                                ###sidebar-sistem####
                                menuItem("Sistem", icon = icon("sitemap"), 
-                                        menuSubItem("Hasil Analisis", tabName = "resTbl")
+                                        menuSubItem("Ringkasan Hasil Sistem", tabName = "resTbl")
                                         # actionButton("submitSys", "Submit")
                                         # actionButton("expSys", "Export")
                                ),
                                ###sidebar-organisasi####
                                menuItem("Organisasi", icon = icon("users"), 
-                                        menuSubItem("Hasil Analisis", tabName = "resTblOrg"),
-                                        uiOutput("selectizeInstitution")
+                                        menuSubItem("Hasil setiap OPD", tabName = "resTblOrg"),
+                                        uiOutput("selectizeInstitution"),
+                                        menuSubItem("Ringkasan Hasil Organisasi", tabName = "resTblOrgAll")
                                         # actionButton("submitOrg", "Submit")
                                         # actionButton("expInd", "Export")
                                ),
                                ###sidebar-individu####
                                menuItem("Individu", icon = icon("address-card"), 
-                                        menuSubItem("Hasil Analisis", tabName = "resTblInd"),
-                                        uiOutput("selectizeName")
+                                        menuSubItem("Hasil setiap Individu", tabName = "resTblInd"),
+                                        uiOutput("selectizeName"),
+                                        menuSubItem("Ringkasan Hasil Individu", tabName = "resTblIndAll")
                                         # actionButton("submitInd", "Submit")
                                         # actionButton("expInd", "Export")
                                ),
@@ -93,7 +93,7 @@ dashboardPage(
     tabItems(
       ###*tab-home####
       tabItem(tabName = "home",
-              jumbotron(img(src="homepage.jpg", width="100%"), " ", button = FALSE)
+              jumbotron(img(src="landingpage.png", width="100%"), " ", button = FALSE)
       ),
       # tabItem(tabName = "home", jumbotron(img(src="ps3.png"), " ", button=FALSE), jumbotron(img(src="tingkatan.png"), " ", button=FALSE)
       # hr(),
@@ -103,9 +103,6 @@ dashboardPage(
       #                             button_link='#shiny-tab-pageOne',button_label = 'OK'))
       #   )
       # ),
-      tabItem(tabName = "home",
-              leafletOutput("koboMap")
-      ),
       ###*tab-pengaturan####
       # tabItem(tabName = "profil",
       #         fluidPage(#theme = shinytheme("cyborg"),
@@ -124,30 +121,47 @@ dashboardPage(
       # ),
       ###*tab-sistem####
       tabItem(tabName = "resTbl",
+              h2("Ringkasan Hasil Analisis Tingkat Sistem per Provinsi "),
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys"),
               actionButton("expSys", "Export")
       ),
       ###*tab-organisasi####
       tabItem(tabName = "resTblOrg",
+              h2("Hasil Analisis Setiap Organisasi Perangkat Daerah (OPD)"),
               dataTableOutput("resTblOrg"),
               plotlyOutput("resChartOrg"),
               actionButton("expOrg", "Export")
       ),
+      tabItem(tabName = "resTblOrgAll",
+              h2("Ringkasan Hasil Analisis Tingkat Organisasi per Provinsi "),
+              dataTableOutput("resTblOrgAll"),
+              plotlyOutput("resChartOrgAll"),
+              actionButton("expOrg", "Export")
+      ),
       ###*tab-individu####
       tabItem(tabName = "resTblInd",
+              h2("Hasil Analisis Setiap Individu"),
               dataTableOutput("resTblInd"),
               plotlyOutput("resChartInd"),
               actionButton("expInd", "Export")
       ),
+      tabItem(tabName = "resTblIndAll",
+              h2("Ringkasan Hasil Analisis Tingkat Individu per Provinsi "),
+              dataTableOutput("resTblIndAll"),
+              plotlyOutput("resChartIndAll"),
+              actionButton("expInd", "Export")
+      ),
       ###*tab-rangkuman####
       tabItem(tabName = "resTblSumm",
+              h2("Rangkuman Hasil Analisis Semua Tingkat"),
               dataTableOutput("resTblSumm"),
               plotlyOutput("resChartSumm"),
               actionButton("exportSummary", "Export")
       ),
       ###*tab-help####
-      tabItem(tabName = "help"
+      tabItem(tabName = "help",
+              jumbotron(img(src="help2-01.png", width="100%"), " ", button = FALSE)
       )
     )
   )
