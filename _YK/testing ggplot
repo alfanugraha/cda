@@ -1,6 +1,7 @@
 library(koboloadeR)
 library (dplyr)
 library(plotly)
+library(ggplot2)
 
 #Shiny app untuk menampilkan dan memgunduh data dari KoBo
 kobo_apps("data_viewer")
@@ -74,11 +75,12 @@ tempGapInd<-5-tempLevelInd
 tempGapInd<-round(tempGapInd,digits = 2)
 graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
 colnames(graphInd)<-c("Indikator","Level","GAP")
-  
-plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
-    add_trace(x=~GAP, name= 'GAP') %>%
-    layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
 
+plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+  add_trace(x=~GAP, name= 'GAP') %>%
+  layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
+
+ggplot(data=graphInd, aes(x=Nilai, y=Indikator, fill=Level))
 
 ### TINGKAT ORGANISASI ####
 inputOrganisasi<-readRDS("data/dataOrganisasi")
@@ -280,7 +282,7 @@ indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
 
 ##Menampilkan hasil satu provinsi###
 tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
-# tempSistem<-filter(tempSistem,Provinsi=="Aceh")
+tempSistem<-filter(tempSistem,Provinsi=="Aceh")
 
 ##Membuat tabel Level setiap aspek###
 aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
@@ -303,11 +305,6 @@ colnames(graphSistem)<-c("Indikator","Level","GAP")
 plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
   add_trace(x=~GAP, name= 'GAP') %>%
   layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
-
-
-
-
-
 
 #### RINGKASAN ####
 ### Rangkuman Sistem Setiap Provinsi ####
@@ -612,9 +609,9 @@ datatable(prioritas,escape = FALSE, rownames = FALSE)
 
 ### Bar Chart Gabungan ####
 plot_ly(summary, x=~`Aspek Penilaian`, y=~Level, type='bar', name='Level') %>%
-    add_trace(y=~GAP, name='GAP') %>%
-    layout(
-      yaxis = list(title='Nilai'),
-      xaxis = list(title='Aspek Penilaian'),
-      barmode='stack', 
-      title="Level dan Gap Penilaian Kapasitas Provinsi")
+  add_trace(y=~GAP, name='GAP') %>%
+  layout(
+    yaxis = list(title='Nilai'),
+    xaxis = list(title='Aspek Penilaian'),
+    barmode='stack', 
+    title="Level dan Gap Penilaian Kapasitas Provinsi")

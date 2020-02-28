@@ -124,40 +124,40 @@ dashboardPage(
               h2("Ringkasan Hasil Analisis Tingkat Sistem per Provinsi "),
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys"),
-              actionButton("expSys", "Export")
+              #actionButton("expSys", "Export")
       ),
       ###*tab-organisasi####
       tabItem(tabName = "resTblOrg",
               h2("Hasil Analisis Setiap Organisasi Perangkat Daerah (OPD)"),
               dataTableOutput("resTblOrg"),
               plotlyOutput("resChartOrg"),
-              actionButton("expOrg", "Export")
+              #actionButton("expOrg", "Export")
       ),
       tabItem(tabName = "resTblOrgAll",
               h2("Ringkasan Hasil Analisis Tingkat Organisasi per Provinsi "),
               dataTableOutput("resTblOrgAll"),
               plotlyOutput("resChartOrgAll"),
-              actionButton("expOrg", "Export")
+              #actionButton("expOrg", "Export")
       ),
       ###*tab-individu####
       tabItem(tabName = "resTblInd",
               h2("Hasil Analisis Setiap Individu"),
               dataTableOutput("resTblInd"),
               plotlyOutput("resChartInd"),
-              actionButton("expInd", "Export")
+              #actionButton("expInd", "Export")
       ),
       tabItem(tabName = "resTblIndAll",
               h2("Ringkasan Hasil Analisis Tingkat Individu per Provinsi "),
               dataTableOutput("resTblIndAll"),
               plotlyOutput("resChartIndAll"),
-              actionButton("expInd", "Export")
+              #actionButton("expInd", "Export")
       ),
       ###*tab-rangkuman####
       tabItem(tabName = "resTblSumm",
               h2("Rangkuman Hasil Analisis Semua Tingkat"),
               dataTableOutput("resTblSumm"),
               plotlyOutput("resChartSumm"),
-              actionButton("exportSummary", "Export")
+              downloadButton('downloadResults', 'Unduh Hasil Analisis', style="color: #fff; background-color: #00a65a; border-color: #008d4c"),
       ),
       ###*tab-help####
       tabItem(tabName = "help",
