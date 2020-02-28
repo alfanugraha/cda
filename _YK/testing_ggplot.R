@@ -73,7 +73,7 @@ plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation=
   add_trace(x=~GAP, name= 'GAP') %>%
   layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
 
-## ggplot untuk unduh hasil anlisis####
+## ggplot untuk unduh hasil anlisis ####
 nilai1 <- t(graphInd$Level)
 nilai2 <- t(graphInd$GAP)
 nilai <- t(cbind(nilai1,nilai2))
@@ -83,15 +83,24 @@ jenis <- t(cbind(jenis1,jenis2))
 indikator <- data.frame(graphInd$Indikator)
 dataGraphInd <- data.frame(cbind(jenis,nilai,indikator))
 colnames(dataGraphInd) <- c("jenis", "nilai", "indikator")
-
+ 
+## Cara 1
 dataGraphInd <- ddply(dataGraphInd, .(indikator),
                      transform, pos = cumsum(nilai)-nilai)
-chartInd<-ggplot() + geom_bar(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis), stat="identity") + 
-  geom_text(data=dataGraphInd, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
+ggplot() + geom_bar(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis), stat="identity") + 
+  geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=4)
 
-chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+## Cara 2
+ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+  geom_bar(stat="identity") + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+  theme(legend.position="bottom", legend.direction="horizontal",
+        legend.title = element_blank()) +
+  geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=4)
+
+## Cara 3 (coord flip)
+ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
   geom_bar(stat="identity") +
-  coord_flip() + guides(fill=FALSE) + xlab("Indikator") + ylab("Nilai") +
-  theme(legend.position="rigth", legend.direction="vertical",
-        legend.title = element_blank())
-
+  coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+  theme(legend.position="bottom", legend.direction="horizontal",
+        legend.title = element_blank()) +
+  geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)

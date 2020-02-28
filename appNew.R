@@ -114,8 +114,8 @@ server <- function(input, output, session) {
     indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
     
     ##Menampilkan hasil satu provinsi###
-    #tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
-    tempSistem<-filter(tempSistem,Provinsi=="Aceh")
+    tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
+    #tempSistem<-filter(tempSistem,Provinsi=="Aceh")
     
     ##Membuat tabel Level setiap aspek###
     aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
@@ -716,7 +716,9 @@ server <- function(input, output, session) {
     
     chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
       geom_bar(stat="identity") +
-      coord_flip() + guides(fill=FALSE) + xlab("Indikator") + ylab("Nilai")
+      coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+      theme(legend.position="bottom", legend.direction="horizontal",
+            legend.title = element_blank())
 
     final_chart$chartIndividu<-chartInd
   })
@@ -795,8 +797,8 @@ server <- function(input, output, session) {
     summIndikatorSys <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
     
     ## Menampilkan hasil satu provinsi untuk tingkat sistem ##
-    #summTempSistem<-filter(summTempSistem,summInputSys$`provinsi/provinsi_001`==input$categoryProvince)
-    summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
+    summTempSistem<-filter(summTempSistem,summInputSys$`provinsi/provinsi_001`==input$categoryProvince)
+    # summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##   
     aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
@@ -909,8 +911,8 @@ server <- function(input, output, session) {
     colnames(summIndikatorOrg)<-"Indikator"
     
     ##Menampilkan hasil satu provinsi untuk tingkat organisasi##
-    #summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==input$categoryProvince)
-    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
+    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==input$categoryProvince)
+    # summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
     
     ##Membuat tabel Level setiap aspek##   
     Level4<-rowSums(summTempOrganisasi[,4:10])/length(summTempOrganisasi[,4:10])
@@ -978,8 +980,8 @@ server <- function(input, output, session) {
     summIndikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     summIndikatorInd  <- as.data.frame(summIndikatorInd)
     
-    #summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==input$categoryProvince)
-    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
+    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==input$categoryProvince)
+    # summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
@@ -1086,6 +1088,12 @@ server <- function(input, output, session) {
       summOrganisasi<-tablesCDA$summaryProvOrg
       summIndividu<-tablesCDA$summaryProvInd
       prioritas<-tablesCDA$priorityTable
+      chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
       title <- "\\b\\fs32 Hasil Analisis Penilaian Kapasistas Mandiri\\b0\\fs20"
       fileresult = file.path(tempdir(), paste0(input$categoryProvince, "_hasil.doc"))
       rtffile <- RTF(fileresult, font.size = 9)
@@ -1102,7 +1110,7 @@ server <- function(input, output, session) {
       addNewLine(rtffile)
       addParagraph(rtffile, "\\b\\fs14 Tabel 4 Rangkuman Hasil dan Tingkat Prioritas per Provinsi\\b0\\fs14")
       addTable(rtffile, prioritas, font.size = 8)
-      addPlot(rtffile, plot.fun = print, width = 5, height = 3, res = 300,  final_chart$chartIndividu)
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartInd)
       done(rtffile)
       
       file.copy(fileresult, file)
