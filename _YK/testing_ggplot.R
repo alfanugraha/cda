@@ -104,3 +104,60 @@ ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
   theme(legend.position="bottom", legend.direction="horizontal",
         legend.title = element_blank()) +
   geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+
+
+
+
+#### Kodingan ####
+output$downloadResults <- downloadHandler(
+  filename = paste0(input$categoryProvince, "_hasil.doc"),
+  content = function(file){
+    tingkatSys<-tablesCDA$summarySystem
+    summOrganisasi<-tablesCDA$summaryProvOrg
+    summIndividu<-tablesCDA$summaryProvInd
+    prioritas<-tablesCDA$priorityTable
+    # chartSys<-ggplot(data=dataGraphSys, aes(x=indikator, y=nilai, fill=jenis)) +
+    #   geom_bar(stat="identity") +
+    #   coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+    #   theme(legend.position="bottom", legend.direction="horizontal",
+    #         legend.title = element_blank()) +
+    #   geom_text(data=dataGraphOrg, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+    # chartOrg<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+    #   geom_bar(stat="identity") +
+    #   coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+    #   theme(legend.position="bottom", legend.direction="horizontal",
+    #         legend.title = element_blank()) +
+    #   geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+    chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+      geom_bar(stat="identity") +
+      coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+      theme(legend.position="bottom", legend.direction="horizontal",
+            legend.title = element_blank()) +
+      geom_text(data=dataGraphSumm, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+    # chartSumm<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+    #   geom_bar(stat="identity") +
+    #   coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+    #   theme(legend.position="bottom", legend.direction="horizontal",
+    #         legend.title = element_blank()) +
+    #   geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+    title <- "\\b\\fs32 Hasil Analisis Penilaian Kapasistas Mandiri\\b0\\fs20"
+    fileresult = file.path(tempdir(), paste0(input$categoryProvince, "_hasil.doc"))
+    rtffile <- RTF(fileresult, font.size = 9)
+    addParagraph(rtffile, title)
+    addNewLine(rtffile)
+    addParagraph(rtffile, "\\b\\fs14 Tabel 1 Aspek Penilaian Tingkat Sistem per Provinsi\\b0\\fs14")
+    addTable(rtffile, tingkatSys, font.size = 8)
+    #addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSys)
+    addNewLine(rtffile)
+    addParagraph(rtffile, "\\b\\fs14 Tabel 2 Aspek Penilaian Tingkat Organiasi per Provinsi\\b0\\fs14")
+    addTable(rtffile, summOrganisasi, font.size = 8)
+    #addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartOrg)
+    addNewLine(rtffile)
+    addParagraph(rtffile, "\\b\\fs14 Tabel 3 Aspek Penilaian Tingkat Individu per Provinsi\\b0\\fs14")
+    addTable(rtffile, summIndividu, font.size = 8)
+    addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartInd)
+    addNewLine(rtffile)
+    addParagraph(rtffile, "\\b\\fs14 Tabel 4 Rangkuman Hasil dan Tingkat Prioritas per Provinsi\\b0\\fs14")
+    addTable(rtffile, prioritas, font.size = 8)
+    #addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSumm)
+    done(rtffile)

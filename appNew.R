@@ -31,6 +31,7 @@ saveRDS(dataIndividu, "data/dataIndividu")
 server <- function(input, output, session) {
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame(), summaryProvInd=data.frame(), summaryProvOrg=data.frame(), priorityTable=data.frame())
   final_chart <- reactiveValues(chartSistem=NULL, chartOrganisasi=NULL, chartIndividu=NULL, chartSummary=NULL)
+  graph_data <- reactiveValues(provInd=NULL, provOrg=NULL, graphSistem=NULL, chartSummary=NULL)
   
   observeEvent(input$inputSetting, {
     showModal(ui=modalDialog("Anda berhasil masuk", easyClose = TRUE), session=session)
@@ -709,10 +710,10 @@ server <- function(input, output, session) {
     dataGraphInd <- data.frame(cbind(jenis,nilai,indikator))
     colnames(dataGraphInd) <- c("jenis", "nilai", "indikator")
 
-    # dataGraphInd <- ddply(dataGraphInd, .(indikator),
-    #                       transform, pos = cumsum(nilai)-nilai)
-    # chartInd<-ggplot() + geom_bar(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis), stat="identity") +
-    #   geom_text(data=dataGraphInd, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
+    dataGraphInd <- ddply(dataGraphInd, .(indikator),
+                          transform, pos = cumsum(nilai)-nilai)
+    chartInd<-ggplot() + geom_bar(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis), stat="identity") +
+      geom_text(data=dataGraphInd, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
     
     chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
       geom_bar(stat="identity") +
@@ -1084,33 +1085,110 @@ server <- function(input, output, session) {
   output$downloadResults <- downloadHandler(
     filename = paste0(input$categoryProvince, "_hasil.doc"),
     content = function(file){
-      tingkatSys<-tablesCDA$summarySystem
-      summOrganisasi<-tablesCDA$summaryProvOrg
-      summIndividu<-tablesCDA$summaryProvInd
+      graphSistem<-tablesCDA$summarySystem
+      provOrg<-tablesCDA$summaryProvOrg
+      provInd<-tablesCDA$summaryProvInd
       prioritas<-tablesCDA$priorityTable
+      summary<-tablesCDA$allSummary
+      
+    ## ggplot unduh hasil analisis ####
+      ## individu ###
+      nilai1 <- t(provInd$Level)
+      nilai2 <- t(provInd$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(provInd$Level)))
+      jenis2 <- t(rep("Gap", length(provInd$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(provInd$Indikator)
+      dataGraphInd <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphInd) <- c("jenis", "nilai", "indikator")
       chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
         geom_bar(stat="identity") +
         coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
         theme(legend.position="bottom", legend.direction="horizontal",
               legend.title = element_blank()) +
         geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      ## organisasi ###
+      nilai1 <- t(provOrg$Level)
+      nilai2 <- t(provOrg$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(provOrg$Level)))
+      jenis2 <- t(rep("Gap", length(provOrg$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(provOrg$Indikator)
+      dataGraphOrg <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphOrg) <- c("jenis", "nilai", "indikator")
+      chartOrg<-ggplot(data=dataGraphOrg, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphOrg, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      ## sistem ###
+      nilai1 <- t(graphSistem$Level)
+      nilai2 <- t(graphSistem$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(graphSistem$Level)))
+      jenis2 <- t(rep("Gap", length(graphSistem$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(graphSistem$Indikator)
+      dataGraphSys <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphSys) <- c("jenis", "nilai", "indikator")
+      chartSys<-ggplot(data=dataGraphSys, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphSys, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      # ## rangkuman ###
+      nilai1 <- t(summary$Level)
+      nilai2 <- t(summary$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(summary$Level)))
+      jenis2 <- t(rep("Gap", length(summary$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      aspek <- data.frame(summary$Aspek)
+      dataGraphSumm <- data.frame(cbind(jenis,nilai,aspek))
+      colnames(dataGraphSumm) <- c("jenis", "nilai", "aspek")
+      chartSumm<-ggplot(data=dataGraphSumm, aes(x=aspek, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Aspek") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphSumm, aes(x =aspek, y =nilai, label =paste0(nilai)), size=2)
+      
+    ## Isi unduhan hasil analisis ###
       title <- "\\b\\fs32 Hasil Analisis Penilaian Kapasistas Mandiri\\b0\\fs20"
       fileresult = file.path(tempdir(), paste0(input$categoryProvince, "_hasil.doc"))
       rtffile <- RTF(fileresult, font.size = 9)
       addParagraph(rtffile, title)
       addNewLine(rtffile)
       addParagraph(rtffile, "\\b\\fs14 Tabel 1 Aspek Penilaian Tingkat Sistem per Provinsi\\b0\\fs14")
-      addTable(rtffile, tingkatSys, font.size = 8)
+      addTable(rtffile, graphSistem, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 1 Indikator Penilaian Tingkat Sistem per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSys)
       addNewLine(rtffile)
       addParagraph(rtffile, "\\b\\fs14 Tabel 2 Aspek Penilaian Tingkat Organiasi per Provinsi\\b0\\fs14")
-      addTable(rtffile, summOrganisasi, font.size = 8)
+      addTable(rtffile, provOrg, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 2 Indikator Penilaian Tingkat Organiasi per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartOrg)
       addNewLine(rtffile)
       addParagraph(rtffile, "\\b\\fs14 Tabel 3 Aspek Penilaian Tingkat Individu per Provinsi\\b0\\fs14")
-      addTable(rtffile, summIndividu, font.size = 8)
+      addTable(rtffile, provInd, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 3 Indikator Penilaian Tingkat Individu per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartInd)
       addNewLine(rtffile)
       addParagraph(rtffile, "\\b\\fs14 Tabel 4 Rangkuman Hasil dan Tingkat Prioritas per Provinsi\\b0\\fs14")
       addTable(rtffile, prioritas, font.size = 8)
-      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartInd)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 4 Grafik 9 Aspek Penilaian per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSumm)
       done(rtffile)
       
       file.copy(fileresult, file)
