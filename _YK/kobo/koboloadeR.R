@@ -3,7 +3,7 @@ library (dplyr)
 library(plotly)
 
 #Shiny app untuk menampilkan dan memgunduh data dari KoBo
-kobo_apps("data_viewer")
+#kobo_apps("data_viewer")
 
 #Mengunduh data secara langsung
 dataSistem<-kobo_data_downloader("327419", "cdna2019:Icraf2019!")
