@@ -27,7 +27,7 @@ saveRDS(dataSistem, "data/dataSistem")
 saveRDS(dataOrganisasi, "data/dataOrganisasi")
 saveRDS(dataIndividu, "data/dataIndividu")
 
-# Define server logic required to draw a histogram
+###*Define server logic####
 server <- function(input, output, session) {
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame(), summaryProvInd=data.frame(), summaryProvOrg=data.frame(), priorityTable=data.frame())
   final_chart <- reactiveValues(chartSistem=NULL, chartOrganisasi=NULL, chartIndividu=NULL, chartSummary=NULL)
