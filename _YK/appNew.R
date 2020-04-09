@@ -231,6 +231,7 @@ server <- function(input, output, session) {
       eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
     }
     
+    inputOrganisasi$`perangkat1/perangkat4/q4.4.3`[inputOrganisasi$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     inputOrganisasi[inputOrganisasi == "n/a"]  <- NA
     inputOrganisasi <- na.omit(inputOrganisasi)
     # inputOrganisasi<-as.data.frame(inputOrganisasi)
@@ -302,70 +303,72 @@ server <- function(input, output, session) {
   })
   
   output$selectizeInstitution <- renderUI({
-    inputOrganisasi<-readRDS("data/dataOrganisasi")
-    inputOrganisasi$`profil/jabatan`<-NULL; inputOrganisasi$`meta/instanceID`<-NULL; inputOrganisasi$`__version__`<-NULL
-    inputOrganisasi$`_uuid`<-NULL; inputOrganisasi$`_submission_time`<-NULL; inputOrganisasi$`_tags`<-NULL; inputOrganisasi$`_notes`<-NULL
+    inputOrg<-readRDS("data/dataOrganisasi")
+    inputOrg$`profil/jabatan`<-NULL; inputOrg$`meta/instanceID`<-NULL; inputOrg$`__version__`<-NULL
+    inputOrg$`_uuid`<-NULL; inputOrg$`_submission_time`<-NULL; inputOrg$`_tags`<-NULL; inputOrg$`_notes`<-NULL
     
-    inputOrganisasi$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
-    inputOrganisasi$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
+    inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
+    inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
     
     for (i in 2:4){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
     }
     
     for (i in 5:6){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
     }
     for (i in 7:9){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
     }
-    inputOrganisasi$`perangkat1/perangkat4/alasan_010`<-NULL
+    
+    inputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
     
     for (i in 11:13){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 14:15){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 16:22){
-      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 23:29){
-      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
     }
     
-    inputOrganisasi$`sdm1/sdm3/alasan_030`<-NULL
-    inputOrganisasi$`sdm1/sdm4/alasan_031`<-NULL
+    inputOrg$`sdm1/sdm3/alasan_030`<-NULL
+    inputOrg$`sdm1/sdm4/alasan_031`<-NULL
     
     for (i in 32:33){
-      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 34:35){
-      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 36:39){
-      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 40:42){
-      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
     }
     
     for (i in 43:44){
-      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
     }
     
-    inputOrganisasi[inputOrganisasi == "n/a"]  <- NA
-    inputOrganisasi <- na.omit(inputOrganisasi)
-    inputOrg<-as.data.frame(inputOrganisasi)
+    inputOrg$`perangkat1/perangkat4/q4.4.3`[inputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
+    inputOrg[inputOrg == "n/a"]  <- NA
+    inputOrg <- na.omit(inputOrg)
+    inputOrg<-as.data.frame(inputOrg)
     
     institution<-filter(inputOrg,inputOrg$`profil/provinsi`==input$categoryProvince)
-    # institution<-filter(inputOrg,inputOrg$`profil/provinsi`=="Aceh")
+    # institution<-filter(inputOrg,inputOrg$`profil/provinsi`=="Sumatera Selatan")
     
     selectizeInput('selectizeInstitution', 'Pilih OPD Anda', choices=list(
       OPD=as.character(sort(institution$`profil/institusi`))
@@ -432,6 +435,7 @@ server <- function(input, output, session) {
       eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
     }
     
+    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg[summInputOrg == "n/a"]<-NA
     summInputOrg<-na.omit(summInputOrg)
     summInputOrg<-as.data.frame(summInputOrg)
@@ -883,6 +887,7 @@ server <- function(input, output, session) {
       eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
     }
     
+    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg[summInputOrg == "n/a"]  <- NA
     summInputOrg <- na.omit(summInputOrg)
     summInputOrg<-as.data.frame(summInputOrg)
