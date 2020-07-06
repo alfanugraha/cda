@@ -1,3 +1,6 @@
+# install.packages(c("shinydashboard", "shinyLP", "shinyjs", "ggplot2", "leaflet", "readxl", "magrittr", "rlang", "pylr", "dplyr", "DT", "koboloadeR", "rtf"))
+
+
 ###*initiate library##
 library(shiny)
 library(shinydashboard)
