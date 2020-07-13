@@ -50,8 +50,8 @@ dashboardPage(
                                                                         "Sulawesi Tenggara", "Sulawesi Barat", "Sulawesi Utara"))
                                         ),
                                         # selectInput("institution", label="Pilih OPD", choices=c("OPD 1", "OPD 2", "OPD 3"), selected = NULL, multiple = FALSE),
-                                        textInput("username", label = "Nama Pengguna", value = "",
-                                                  width = NULL, placeholder = "Masukkan nama pengguna Anda"),
+                                        # textInput("username", label = "Nama Pengguna", value = "",
+                                        #           width = NULL, placeholder = "Masukkan nama pengguna Anda"),
                                         # passwordInput("password", label = "Kata Sandi", value = "", width=NULL, placeholder="Masukkan kata sandi Anda"),
                                         actionButton("inputSetting", label = "Masuk")
                                ),
@@ -156,7 +156,7 @@ dashboardPage(
       tabItem(tabName = "resTblSumm",
               h2("Rangkuman Hasil Analisis Semua Tingkat"),
               dataTableOutput("resTblSumm"),
-              plotlyOutput("resChartSumm")
+              plotlyOutput("resChartSumm"),
               downloadButton('downloadResults', 'Unduh Hasil Analisis', style="color: #fff; background-color: #00a65a; border-color: #008d4c"),
       ),
       ###*tab-help####
