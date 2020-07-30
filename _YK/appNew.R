@@ -1033,7 +1033,55 @@ server <- function(input, output, session) {
     tablesCDA$allSummary <- summary
     tablesCDA$priorityTable <- prioritas
     
-    datatable(prioritas,escape = FALSE, rownames = FALSE)
+    initial_indikator <- substring(prioritas$Indikator,1, 3)
+    tabel <- data.frame(cbind(initial_indikator, prioritas$Level, prioritas$Prioritas))
+    colnames(tabel)<-c("Indikator", "Level", "Prioritas")
+    tabel$Level <- as.numeric(levels(tabel$Level))[tabel$Level]
+    tabel$Rekomendasi <- "Tidak ada rekomendasi"
+    
+    ###Define the recommendation of each indicator####
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.1" & Level<=2 , "Penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.2" & Level<=2 , "Sosialisasi Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD dan Pembuatan petunjuk operasional dalam regulasi yang mengatur PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.1" & Level<=2 , "Pengarusutamaan konsep pembangunan rendah karbon dalam visi misi daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.2" & Level<=2 , "Pengarusutamaan isu strategis pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.3" & Level<=2 , "Pengarusutamaan prioritas pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.4" & Level<=2 , "Pengarusutamaan indikator pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.5" & Level<=2 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.1" & Level<=2 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.2" & Level<=2 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.3" & Level<=2 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.4" & Level<=2 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.5" & Level<=2 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.1" & Level<=2 , "Revitalisasi organisasi kelompok kerja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.2" & Level<=2 , "Adaptasi struktur organisasi yang disesuaikan dengan kebutuhan implementasi pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.3" & Level<=2 , "Penyusunan mekanisme pengambilan keputusan yang inklusif dan berbasiskan data yang shahih", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.4" & Level<=2 , "Penyusunan prosedur/proses kerja serta pengelolaan kelembagaan yang mencakup seluruh aktivitas Pokja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.5" & Level<=2 , "Fasilitasi penyediaan anggaran bagi operasional Pokja termasuk proses penganggaran di dalam APBD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.6" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.7" & Level<=2 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.1" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.2" & Level<=2 , "Penguatan kapasitas anggota Pokja dalam proses pengarusutamaan PPRKD ke dalam perencanaan pembangunan daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.3" & Level<=2 , "Penguatan kapasitas anggota Pokja dalam proses penulisan/pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.4" & Level<=2 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.5" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.1" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.2" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.3" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.4" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.1" & Level<=2 , "Penyediaan data yang berkualitas dalam pelaksanaan PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.2" & Level<=2 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.3" & Level<=2 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.1" & Level<=2 , "Peningkatan penggunaan perangkat lunak dalam pengelolaan data dan analisis teknis dalam rangka perencanaan dan pemantauan, evaluasi, serta pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.2" & Level<=2 , "Pengadaan perangkat keras penunjang aktivitas perencanaan, pemantauan, evaluasi, dan pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.3" & Level<=2 , "Penyediaan kapasitas jaringan yang mendukung proses perencanaan, pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.1" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.2" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.3" & Level<=2 , "Penyusunan prosedur pelibatan berbagai pihak termasuk kabupaten/kota dan swasta dalam proses pemantauan, evaluasi, dan pelaporan program pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.4" & Level<=2 , "Penyusunan prosedur pemanfaatan data pemantauan, evaluasi, dan pelaporan bagi kepentingan berbagai pihak", Rekomendasi)})
+    
+    tabel$Indikator <- prioritas$Indikator
+    
+    datatable(tabel,escape = FALSE, rownames = FALSE)
     
   })
       ## Bar Chart Semua Tingkat ##

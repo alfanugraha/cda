@@ -71,8 +71,8 @@ dashboardPage(
                                ),
                                ###sidebar-individu####
                                menuItem("Individu", icon = icon("address-card"), 
-                                        menuSubItem("Hasil setiap Individu", tabName = "resTblInd"),
-                                        uiOutput("selectizeName"),
+                                        # menuSubItem("Hasil setiap Individu", tabName = "resTblInd"),
+                                        # uiOutput("selectizeName"),
                                         menuSubItem("Ringkasan Hasil Individu", tabName = "resTblIndAll")
                                         # actionButton("submitInd", "Submit")
                                         # actionButton("expInd", "Export")
@@ -121,7 +121,7 @@ dashboardPage(
       # ),
       ###*tab-sistem####
       tabItem(tabName = "resTbl",
-              h2("Ringkasan Hasil Analisis Tingkat Sistem per Provinsi "),
+              h2("Ringkasan Hasil Analisis Tingkat Sistem per Provinsi"),
               dataTableOutput("resTblSys"),
               plotlyOutput("resChartSys")
               #actionButton("expSys", "Export")
@@ -134,20 +134,20 @@ dashboardPage(
               #actionButton("expOrg", "Export")
       ),
       tabItem(tabName = "resTblOrgAll",
-              h2("Ringkasan Hasil Analisis Tingkat Organisasi per Provinsi "),
+              h2("Ringkasan Hasil Analisis Tingkat Organisasi per Provinsi"),
               dataTableOutput("resTblOrgAll"),
               plotlyOutput("resChartOrgAll")
               #actionButton("expOrg", "Export")
       ),
       ###*tab-individu####
-      tabItem(tabName = "resTblInd",
-              h2("Hasil Analisis Setiap Individu"),
-              dataTableOutput("resTblInd"),
-              plotlyOutput("resChartInd")
-              #actionButton("expInd", "Export")
-      ),
+      # tabItem(tabName = "resTblInd",
+      #         h2("Hasil Analisis Setiap Individu"),
+      #         dataTableOutput("resTblInd"),
+      #         plotlyOutput("resChartInd")
+      #         #actionButton("expInd", "Export")
+      # ),
       tabItem(tabName = "resTblIndAll",
-              h2("Ringkasan Hasil Analisis Tingkat Individu per Provinsi "),
+              h2("Ringkasan Hasil Analisis Tingkat Individu per Provinsi"),
               dataTableOutput("resTblIndAll"),
               plotlyOutput("resChartIndAll")
               #actionButton("expInd", "Export")
