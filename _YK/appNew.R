@@ -1,6 +1,5 @@
 # install.packages(c("shinydashboard", "shinyLP", "shinyjs", "ggplot2", "leaflet", "readxl", "magrittr", "rlang", "pylr", "dplyr", "DT", "koboloadeR", "rtf"))
 
-
 ###*initiate library##
 library(shiny)
 library(shinydashboard)
@@ -26,26 +25,63 @@ dataSistem<-kobo_data_downloader("327419", "cdna2019:Icraf2019!")
 dataOrganisasi<-kobo_data_downloader("327585", "cdna2019:Icraf2019!")
 dataIndividu<-kobo_data_downloader("327418", "cdna2019:Icraf2019!")
 
+# user_database <- read.csv("_YK/login/user.csv", sep = ";")
+# user_database$provinsi <- as.character(user_database$provinsi)
+# saveRDS(user_database, "_YK/login/user_database")
+
 saveRDS(dataSistem, "data/dataSistem")
 saveRDS(dataOrganisasi, "data/dataOrganisasi")
 saveRDS(dataIndividu, "data/dataIndividu")
 
 ###*Define server logic####
 server <- function(input, output, session) {
+  # source("login/login-server.R", local = TRUE)
+  
   tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame(), summaryProvInd=data.frame(), summaryProvOrg=data.frame(), priorityTable=data.frame())
   final_chart <- reactiveValues(chartSistem=NULL, chartOrganisasi=NULL, chartIndividu=NULL, chartSummary=NULL)
   graph_data <- reactiveValues(provInd=NULL, provOrg=NULL, graphSistem=NULL, chartSummary=NULL)
   
+  categoryProvince <- reactiveValues(provinsi=NULL)
+
+  user_database<-readRDS("login/user_database")
+  # categoryProvince <- eventReactive(input$inputSetting, {
+  #   if(length(which(user_database$username==input$username))==1){
+  #     showModal(ui=modalDialog("Anda Berhasil Masuk", easyClose = TRUE), session=session)
+  #     selectedDatabase = filter(user_database, username==input$username) 
+  #     categoryProvince = selectedDatabase$provinsi
+  #   } else {
+  #     showModal(ui=modalDialog("Nama Pengguna Salah", easyClose = FALSE), session=session)  
+  #     categoryProvince = NULL
+  #     }
+  # })
+  
   observeEvent(input$inputSetting, {
-    showModal(ui=modalDialog("Anda berhasil masuk", easyClose = TRUE), session=session)
+    if(length(which(user_database$username==input$username & user_database$password==input$password))==1){
+      showModal(ui=modalDialog("Anda Berhasil Masuk", easyClose = TRUE), session=session)
+      selectedDatabase = filter(user_database, username==input$username) 
+      categoryProvince$provinsi = selectedDatabase$provinsi
+    } else {
+      showModal(ui=modalDialog("Nama Pengguna atau Kata Sandi Salah", easyClose = FALSE), session=session)  
+      categoryProvince$provinsi = NULL
+    }
   })
+  
+  output$titleSistem <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Sistem Provinsi ", categoryProvince$provinsi) })
+  output$titleOrganisasi <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Organisasi Provinsi ", categoryProvince$provinsi) })
+  output$titleOPD <- renderText({ paste0("Hasil Analisis ", input$selectizeInstitution) })
+  output$titleIndividu <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Individu Provinsi ", categoryProvince$provinsi) })
+  output$titleRangkuman <- renderText({ paste0("Rangkuman Keseluruhan Provinsi ", categoryProvince$provinsi) })
+  output$yearCDNA <- renderText({ paste0("Tahun: ", input$selectedYear) })
   
   ####MENU SISTEM####
   output$resTblSys <- renderDataTable({
     
     inputSistem<-readRDS("data/dataSistem")
+    inputSistem$year <- format(as.Date(inputSistem$`provinsi/tanggal`), format = "%Y")
+    inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
     
     inputSistem$`meta/instanceID`<-NULL; inputSistem$`__version__`<-NULL; inputSistem$`_uuid`<-NULL; inputSistem$`_submission_time`<-NULL; inputSistem$`_tags`<-NULL; inputSistem$`_notes`<-NULL
+    
     inputSistem$`regulasi/regulasi1/alasan`<-NULL
     inputSistem$`regulasi/regulasi2/alasan_001`<-NULL
     inputSistem$`integrasi1/integrasi2/alasan_002`<-NULL
@@ -118,7 +154,7 @@ server <- function(input, output, session) {
     indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
     
     ## Menampilkan hasil satu provinsi ##
-    tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
+    tempSistem<-filter(tempSistem,Provinsi==categoryProvince$provinsi)
     # tempSistem<-filter(tempSistem,Provinsi=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##
@@ -143,8 +179,14 @@ server <- function(input, output, session) {
     
     tingkatSys
     # datatable(tingkatSys,escape = FALSE, rownames = FALSE)
+    
+    # if(is.null(tingkatSys$Level)==TRUE) {
+    #   showModal(ui=modalDialog("Data pada tahun ini belum tersedia", easyClose = TRUE), session=session)
+    #   } else if(is.null(tingkatSys$Level)==FALSE) {
+    #     print(tingkatSys)
+    #   }
   })
-  
+
   output$resChartSys <- renderPlotly({
     graphSistem <- tablesCDA$summarySystem  
     plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
@@ -171,12 +213,12 @@ server <- function(input, output, session) {
       
       final_chart$chartSistem <- chartSys 
     })
-
   
   ####MENU ORGANISASI####
   ## Hasil Analisis setiap OPD ###
   output$resTblOrg <- renderDataTable({
     inputOrganisasi<-readRDS("data/dataOrganisasi")
+    
     inputOrganisasi$`profil/jabatan`<-NULL; inputOrganisasi$`meta/instanceID`<-NULL; inputOrganisasi$`__version__`<-NULL
     inputOrganisasi$`_uuid`<-NULL; inputOrganisasi$`_submission_time`<-NULL; inputOrganisasi$`_tags`<-NULL; inputOrganisasi$`_notes`<-NULL
     
@@ -237,9 +279,12 @@ server <- function(input, output, session) {
     inputOrganisasi$`perangkat1/perangkat4/q4.4.3`[inputOrganisasi$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     inputOrganisasi[inputOrganisasi == "n/a"]  <- NA
     inputOrganisasi <- na.omit(inputOrganisasi)
+    inputOrganisasi$year <- format(as.Date(inputOrganisasi$`profil/tanggal`), format = "%Y")
+    inputOrganisasi<-filter(inputOrganisasi,inputOrganisasi$year==input$selectedYear)
+    year <- inputOrganisasi$year
     # inputOrganisasi<-as.data.frame(inputOrganisasi)
     
-    organisasi<- as.data.frame(lapply(inputOrganisasi[,5:length(inputOrganisasi)], as.numeric))
+    organisasi<- as.data.frame(lapply(inputOrganisasi[,5:(length(inputOrganisasi)-1)], as.numeric))
     
     q4.1<-rowSums(organisasi[,1:2]); q4.1<- as.data.frame(q4.1)/2
     q4.2<-rowSums(organisasi[,3:5]); q4.2<- as.data.frame(q4.2)/3
@@ -256,15 +301,15 @@ server <- function(input, output, session) {
     q8.2<-rowSums(organisasi[,41:43]); q8.2<- as.data.frame(q8.2)/3
     q8.3<-rowSums(organisasi[,44:45]); q8.3<- as.data.frame(q8.3)/2
     valOrganisasi <- cbind(inputOrganisasi$`profil/provinsi`,inputOrganisasi$`profil/institusi`,inputOrganisasi$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
-    colnames(valOrganisasi)<-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
-    tempOrganisasi<-as.data.frame(valOrganisasi)
+    colnames(valOrganisasi)<-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3")
+    tempOrganisasi<-as.data.frame(cbind(valOrganisasi,year))
     
     file_indOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
     indikatorOrg <- as.data.frame(unique(file_indOrg$Kapasitas_Fungsional))
     colnames(indikatorOrg)<-"Indikator"
     
     ## Menampilkan hasil OPD per provinsi ##
-    tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi==input$categoryProvince & valOrganisasi$Institusi==input$selectizeInstitution) #buat field insitution
+    tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi==categoryProvince$provinsi & valOrganisasi$Institusi==input$selectizeInstitution) #buat field insitution
     # tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi=="Sulawesi Selatan" & valOrganisasi$Institusi=="bappeda")
     
     ## Membuat tabel Level setiap aspek ##
@@ -307,9 +352,10 @@ server <- function(input, output, session) {
   
   output$selectizeInstitution <- renderUI({
     inputOrg<-readRDS("data/dataOrganisasi")
+    
     inputOrg$`profil/jabatan`<-NULL; inputOrg$`meta/instanceID`<-NULL; inputOrg$`__version__`<-NULL
     inputOrg$`_uuid`<-NULL; inputOrg$`_submission_time`<-NULL; inputOrg$`_tags`<-NULL; inputOrg$`_notes`<-NULL
-    
+
     inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
     inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
     
@@ -368,9 +414,11 @@ server <- function(input, output, session) {
     inputOrg$`perangkat1/perangkat4/q4.4.3`[inputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     inputOrg[inputOrg == "n/a"]  <- NA
     inputOrg <- na.omit(inputOrg)
+    inputOrg$year <- format(as.Date(inputOrg$`profil/tanggal`), format = "%Y")
+    inputOrg<-filter(inputOrg,inputOrg$year==input$selectedYear)
     inputOrg<-as.data.frame(inputOrg)
     
-    institution<-filter(inputOrg,inputOrg$`profil/provinsi`==input$categoryProvince)
+    institution<-filter(inputOrg,inputOrg$`profil/provinsi`==categoryProvince$provinsi)
     # institution<-filter(inputOrg,inputOrg$`profil/provinsi`=="Sumatera Selatan")
     
     selectizeInput('selectizeInstitution', 'Pilih OPD Anda', choices=list(
@@ -381,6 +429,7 @@ server <- function(input, output, session) {
   ### Ringkasan Hasil Organisasi ###
   output$resTblOrgAll <- renderDataTable({
     summInputOrg<-readRDS("data/dataOrganisasi")
+    
     summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
     summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
     
@@ -441,6 +490,9 @@ server <- function(input, output, session) {
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg[summInputOrg == "n/a"]<-NA
     summInputOrg<-na.omit(summInputOrg)
+    summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
+    year <- summInputOrg$year
     summInputOrg<-as.data.frame(summInputOrg)
     
     summOrg<-as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
@@ -461,14 +513,14 @@ server <- function(input, output, session) {
     q8.3<-rowSums(summOrg[,44:45]); q8.3<-as.data.frame(q8.3)/2
     valOrganisasi <-cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
     colnames(valOrganisasi) <-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
-    summTempOrganisasi <-as.data.frame(valOrganisasi)
+    summTempOrganisasi <-as.data.frame(cbind(valOrganisasi,year))
     
     indikatorOrg <-read.table("init/organisation.csv", header=TRUE, sep=",")
     summIndikatorOrg <-as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
     colnames(summIndikatorOrg) <-"Indikator"
     
     ## Menampilkan hasil satu provinsi untuk tingkat organisasi ##
-    summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==input$categoryProvince)
+    summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
     # summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##   
@@ -531,70 +583,74 @@ server <- function(input, output, session) {
   ####MENU INDIVIDU####
   
   ### Hasil Analisis setiap Individu ###
-  output$resTblInd <- renderDataTable({
-    inputIndividu<-readRDS("data/dataIndividu")
-    inputIndividu$`profil/gender`<-NULL; inputIndividu$`profil/jabatan`<-NULL; inputIndividu$`profil/akun`<-NULL; inputIndividu$`profil/noHP`<-NULL; inputIndividu$`profil/email`<-NULL
-    inputIndividu$`meta/instanceID`<-NULL; inputIndividu$`__version__`<-NULL; inputIndividu$`_uuid`<-NULL; inputIndividu$`_submission_time`<-NULL; inputIndividu$`_tags`<-NULL; inputIndividu$`_notes`<-NULL
-    
-    inputIndividu$`sdm_i1/sdm_i2/alasan`<-NULL
-    inputIndividu$`sdm_i1/sdm_i2/alasan_001`<-NULL
-    
-    for (i in 2:9){
-      eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    }
-    inputIndividu$`sdm_i1/sdm_i3/alasan_010`<-NULL
-    
-    for (i in 11:19){
-      eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 20:22){
-      eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    }
-    
-    # Menghilangkan n/a pada data frame #
-    inputIndividu[inputIndividu == "n/a"]  <- NA
-    inputIndividu <- na.omit(inputIndividu)
-    
-    individu<- as.data.frame(lapply(inputIndividu[,5:length(inputIndividu)], as.numeric))
-    
-    q6.1<-rowSums(individu[,1:2]); q6.1<-as.data.frame(q6.1)/2
-    q6.2<-rowSums(individu[,3:11]); q6.2<-as.data.frame(q6.2)/9
-    q6.3<-rowSums(individu[,12:20]); q6.3<-as.data.frame(q6.3)/9
-    q6.4<-rowSums(individu[,21:23]); q6.4<-as.data.frame(q6.4)/3
-    valInd<-cbind(inputIndividu$`profil/provinsi`,inputIndividu$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
-    colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
-    tempIndividu<-as.data.frame(valInd)
-    
-    # Mendefinisikan nama setiap indikator #
-    indikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
-    indikatorInd  <- as.data.frame(indikatorInd)
-    
-    ## Menampilkan hasil satu induvidu per provinsi ##
-    tempIndividu<-filter(valInd,valInd$Provinsi==input$categoryProvince & valInd$Nama==input$selectizeName)
-    #tempIndividu<-filter(valInd,valInd$Provinsi=="Aceh" & valInd$Nama=="Yumna")
-    
-    ## Membuat tabel Level setiap aspek ##
-    aspekInd<-"6. Sumber Daya Manusia - Individu"
-    Level6<-rowMeans(tempIndividu[3:length(tempIndividu)])
-    Level6<-round(Level6, digits = 2)
-    gap6<-5-Level6
-    gap6<-round(gap6, digits = 2)
-    tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
-    colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
-    
-    ## Membuat bar chart untuk tingkat Individu ###
-    Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
-    tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
-    tempLevelInd<-round(tempLevelInd, digits = 2)
-    tempGapInd<-5-tempLevelInd
-    tempGapInd<-round(tempGapInd,digits = 2)
-    graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
-    colnames(graphInd)<-c("Indikator","Level","GAP")
-    tablesCDA$summaryInd <- graphInd
-    
-    datatable(tingkatInd,escape = FALSE, rownames = FALSE)
-  })
+  # output$resTblInd <- renderDataTable({
+  #   inputIndividu<-readRDS("data/dataIndividu")
+  # 
+  #   inputIndividu$`profil/gender`<-NULL; inputIndividu$`profil/jabatan`<-NULL; inputIndividu$`profil/akun`<-NULL; inputIndividu$`profil/noHP`<-NULL; inputIndividu$`profil/email`<-NULL
+  #   inputIndividu$`meta/instanceID`<-NULL; inputIndividu$`__version__`<-NULL; inputIndividu$`_uuid`<-NULL; inputIndividu$`_submission_time`<-NULL; inputIndividu$`_tags`<-NULL; inputIndividu$`_notes`<-NULL
+  #   
+  #   inputIndividu$`sdm_i1/sdm_i2/alasan`<-NULL
+  #   inputIndividu$`sdm_i1/sdm_i2/alasan_001`<-NULL
+  #   
+  #   for (i in 2:9){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+  #   }
+  #   inputIndividu$`sdm_i1/sdm_i3/alasan_010`<-NULL
+  #   
+  #   for (i in 11:19){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
+  #   }
+  #   
+  #   for (i in 20:22){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
+  #   }
+  #   
+  #   # Menghilangkan n/a pada data frame #
+  #   inputIndividu[inputIndividu == "n/a"]  <- NA
+  #   inputIndividu <- na.omit(inputIndividu)
+  #   inputIndividu$year <- format(as.Date(inputIndividu$`profil/tanggal`), format = "%Y")
+  #   inputIndividu<-filter(inputIndividu,inputIndividu$year==input$selectedYear)
+  #   year <- inputIndividu$year
+  #   
+  #   individu<- as.data.frame(lapply(inputIndividu[,5:(length(inputIndividu)-1)], as.numeric))
+  #   
+  #   q6.1<-rowSums(individu[,1:2]); q6.1<-as.data.frame(q6.1)/2
+  #   q6.2<-rowSums(individu[,3:11]); q6.2<-as.data.frame(q6.2)/9
+  #   q6.3<-rowSums(individu[,12:20]); q6.3<-as.data.frame(q6.3)/9
+  #   q6.4<-rowSums(individu[,21:23]); q6.4<-as.data.frame(q6.4)/3
+  #   valInd<-cbind(inputIndividu$`profil/provinsi`,inputIndividu$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
+  #   colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
+  #   tempIndividu<-as.data.frame(cbind(valInd, year))
+  #   
+  #   # Mendefinisikan nama setiap indikator #
+  #   indikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
+  #   indikatorInd  <- as.data.frame(indikatorInd)
+  #   
+  #   ## Menampilkan hasil satu induvidu per provinsi ##
+  #   tempIndividu<-filter(valInd,valInd$Provinsi==categoryProvince$provinsi & valInd$Nama==input$selectizeName)
+  #   #tempIndividu<-filter(valInd,valInd$Provinsi=="Aceh" & valInd$Nama=="Yumna")
+  #   
+  #   ## Membuat tabel Level setiap aspek ##
+  #   aspekInd<-"6. Sumber Daya Manusia - Individu"
+  #   Level6<-rowMeans(tempIndividu[3:length(tempIndividu)])
+  #   Level6<-round(Level6, digits = 2)
+  #   gap6<-5-Level6
+  #   gap6<-round(gap6, digits = 2)
+  #   tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
+  #   colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
+  #   
+  #   ## Membuat bar chart untuk tingkat Individu ###
+  #   Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
+  #   tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+  #   tempLevelInd<-round(tempLevelInd, digits = 2)
+  #   tempGapInd<-5-tempLevelInd
+  #   tempGapInd<-round(tempGapInd,digits = 2)
+  #   graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
+  #   colnames(graphInd)<-c("Indikator","Level","GAP")
+  #   tablesCDA$summaryInd <- graphInd
+  #   
+  #   datatable(tingkatInd,escape = FALSE, rownames = FALSE)
+  # })
   
   output$resChartInd <- renderPlotly({
     graphInd <- tablesCDA$summaryInd
@@ -605,6 +661,7 @@ server <- function(input, output, session) {
   
   output$selectizeName <- renderUI({
     inputInd<-readRDS("data/dataIndividu")
+    
     inputInd$`profil/gender`<-NULL; inputInd$`profil/jabatan`<-NULL; inputInd$`profil/akun`<-NULL; inputInd$`profil/noHP`<-NULL; inputInd$`profil/email`<-NULL
     inputInd$`meta/instanceID`<-NULL; inputInd$`__version__`<-NULL; inputInd$`_uuid`<-NULL; inputInd$`_submission_time`<-NULL; inputInd$`_tags`<-NULL; inputInd$`_notes`<-NULL
     
@@ -627,8 +684,10 @@ server <- function(input, output, session) {
     #Menghilangkan n/a pada data frame#
     inputInd[inputInd == "n/a"]  <- NA
     inputInd <- na.omit(inputInd)
+    inputInd$year <- format(as.Date(inputInd$`profil/tanggal`), format = "%Y")
+    inputInd<-filter(inputInd,inputInd$year==input$selectedYear)
     
-    name<-filter(inputInd,inputInd$`profil/provinsi`==input$categoryProvince)
+    name<-filter(inputInd,inputInd$`profil/provinsi`==categoryProvince$provinsi)
     #name<-filter(inputInd,inputInd$`profil/provinsi`=="Aceh")
     
     selectizeInput('selectizeName', 'Pilih nama Anda', choices=list(
@@ -639,6 +698,7 @@ server <- function(input, output, session) {
   ### Ringkasan Hasil Inidividu ###
   output$resTblIndAll <- renderDataTable({
     summInputInd<-readRDS("data/dataIndividu")
+    
     summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
     summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
     
@@ -661,8 +721,12 @@ server <- function(input, output, session) {
     ## Menghilangkan n/a pada data frame ##
     summInputInd[summInputInd == "n/a"]  <- NA
     summInputInd <- na.omit(summInputInd)
+    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    year <- summInputInd$year
+    summInputInd <- as.data.frame(summInputInd)
     
-    summInd<- as.data.frame(lapply(summInputInd[,5:length(summInputInd)], as.numeric))
+    summInd<- as.data.frame(lapply(summInputInd[,5:(length(summInputInd)-1)], as.numeric))
     
     q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
     q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
@@ -670,24 +734,24 @@ server <- function(input, output, session) {
     q6.4<-rowSums(summInd[,21:23]); q6.4<-as.data.frame(q6.4)/3
     valInd<-cbind(summInputInd$`profil/provinsi`,summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
     colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
-    summTempIndividu<-as.data.frame(valInd)
+    summTempIndividu<-as.data.frame(cbind(valInd,year))
     
     summIndikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     summIndikatorInd  <- as.data.frame(summIndikatorInd)
     
-    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==input$categoryProvince)
-    #summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
+    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==categoryProvince$provinsi)
+    # summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    Level6<-mean(as.matrix(summTempIndividu[3:length(summTempIndividu)]))
+    Level6<-mean(as.matrix(summTempIndividu[3:(length(summTempIndividu)-1)]))
     Level6<-round(Level6,digits = 2)
     gap6<-5-Level6
     summIndividu<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
     colnames(summIndividu)<-c("Aspek Penilaian","Level","GAP")
     
     ## Menampilkan level per indikator ##
-    Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
+    Ind6.1<-mean(summTempIndividu$q6.1); Ind6.2<-mean(summTempIndividu$q6.2); Ind6.3<-mean(summTempIndividu$q6.3); Ind6.4<-mean(summTempIndividu$q6.4)
     levelProvInd<-as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
     levelProvInd<-round(levelProvInd, digits=2)
     gapProvInd<-5-levelProvInd
@@ -738,6 +802,7 @@ server <- function(input, output, session) {
     summInputSys<-readRDS("data/dataSistem")
     
     summInputSys$`meta/instanceID`<-NULL; summInputSys$`__version__`<-NULL; summInputSys$`_uuid`<-NULL; summInputSys$`_submission_time`<-NULL; summInputSys$`_tags`<-NULL; summInputSys$`_notes`<-NULL
+    
     summInputSys$`regulasi/regulasi1/alasan`<-NULL
     summInputSys$`regulasi/regulasi2/alasan_001`<-NULL
     summInputSys$`integrasi1/integrasi2/alasan_002`<-NULL
@@ -786,7 +851,10 @@ server <- function(input, output, session) {
     summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
     summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
     summInputSys[is.na(summInputSys)]<-3
-    summSys<- as.data.frame(lapply(summInputSys[,3:length(summInputSys)], as.numeric))
+    summInputSys$year <- format(as.Date(summInputSys$`provinsi/tanggal`), format = "%Y")
+    summInputSys<-filter(summInputSys,summInputSys$year==input$selectedYear)
+    
+    summSys<- as.data.frame(lapply(summInputSys[,3:(length(summInputSys)-1)], as.numeric))
     
     q2.5<-rowSums(summSys[,9:10]); q2.5<- as.data.frame(q2.5)/2
     q7.1 <- rowSums(summSys[,14:32]); q7.1<- as.data.frame(q7.1)/19
@@ -805,7 +873,7 @@ server <- function(input, output, session) {
     summIndikatorSys <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
     
     ## Menampilkan hasil satu provinsi untuk tingkat sistem ##
-    summTempSistem<-filter(summTempSistem,summInputSys$`provinsi/provinsi_001`==input$categoryProvince)
+    summTempSistem<-filter(summTempSistem,summInputSys$`provinsi/provinsi_001`==categoryProvince$provinsi)
     # summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##   
@@ -833,6 +901,7 @@ server <- function(input, output, session) {
     
     #### Tabel Prioritas Tingkat Organisasi ####
     summInputOrg<-readRDS("data/dataOrganisasi")
+
     summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
     summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
     
@@ -893,6 +962,8 @@ server <- function(input, output, session) {
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg[summInputOrg == "n/a"]  <- NA
     summInputOrg <- na.omit(summInputOrg)
+    summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     summInputOrg<-as.data.frame(summInputOrg)
     
     summOrg<- as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
@@ -920,7 +991,7 @@ server <- function(input, output, session) {
     colnames(summIndikatorOrg)<-"Indikator"
     
     ##Menampilkan hasil satu provinsi untuk tingkat organisasi##
-    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==input$categoryProvince)
+    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
     # summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
     
     ##Membuat tabel Level setiap aspek##   
@@ -953,6 +1024,7 @@ server <- function(input, output, session) {
     
     ### Tabel Prioritas Tingkat Individu ####
     summInputInd<-readRDS("data/dataIndividu")
+    
     summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
     summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
     
@@ -975,6 +1047,8 @@ server <- function(input, output, session) {
     ## Menghilangkan n/a pada data frame ##
     summInputInd[summInputInd == "n/a"]  <- NA
     summInputInd <- na.omit(summInputInd)
+    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
     
     summInd<- as.data.frame(lapply(summInputInd[,5:length(summInputInd)], as.numeric))
     
@@ -989,7 +1063,7 @@ server <- function(input, output, session) {
     summIndikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     summIndikatorInd  <- as.data.frame(summIndikatorInd)
     
-    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==input$categoryProvince)
+    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==categoryProvince$provinsi)
     # summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
     
     ## Membuat tabel Level setiap aspek ##
@@ -1000,7 +1074,7 @@ server <- function(input, output, session) {
     colnames(summIndividu)<-c("Aspek Penilaian","Level","GAP")
     
     ## Menampilkan level per indikator & prioritas ##
-    Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
+    Ind6.1<-mean(summTempIndividu$q6.1); Ind6.2<-mean(summTempIndividu$q6.2); Ind6.3<-mean(summTempIndividu$q6.3); Ind6.4<-mean(summTempIndividu$q6.4)
     provInd<-as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
     provInd<-round(provInd, digits=2)
     
@@ -1040,44 +1114,44 @@ server <- function(input, output, session) {
     tabel$Rekomendasi <- "Tidak ada rekomendasi"
     
     ###Define the recommendation of each indicator####
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.1" & Level<=2 , "Penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.2" & Level<=2 , "Sosialisasi Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD dan Pembuatan petunjuk operasional dalam regulasi yang mengatur PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.1" & Level<=2 , "Pengarusutamaan konsep pembangunan rendah karbon dalam visi misi daerah", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.2" & Level<=2 , "Pengarusutamaan isu strategis pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.3" & Level<=2 , "Pengarusutamaan prioritas pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.4" & Level<=2 , "Pengarusutamaan indikator pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.5" & Level<=2 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.1" & Level<=2 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.2" & Level<=2 , "Tanpa rekomendasi", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.3" & Level<=2 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.4" & Level<=2 , "Tanpa rekomendasi", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.5" & Level<=2 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.1" & Level<=2 , "Revitalisasi organisasi kelompok kerja", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.2" & Level<=2 , "Adaptasi struktur organisasi yang disesuaikan dengan kebutuhan implementasi pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.3" & Level<=2 , "Penyusunan mekanisme pengambilan keputusan yang inklusif dan berbasiskan data yang shahih", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.4" & Level<=2 , "Penyusunan prosedur/proses kerja serta pengelolaan kelembagaan yang mencakup seluruh aktivitas Pokja", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.5" & Level<=2 , "Fasilitasi penyediaan anggaran bagi operasional Pokja termasuk proses penganggaran di dalam APBD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.6" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.7" & Level<=2 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.1" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.2" & Level<=2 , "Penguatan kapasitas anggota Pokja dalam proses pengarusutamaan PPRKD ke dalam perencanaan pembangunan daerah", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.3" & Level<=2 , "Penguatan kapasitas anggota Pokja dalam proses penulisan/pelaporan pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.4" & Level<=2 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.5" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.1" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.2" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.3" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.4" & Level<=2 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.1" & Level<=2 , "Penyediaan data yang berkualitas dalam pelaksanaan PPRKD", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.2" & Level<=2 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.3" & Level<=2 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.1" & Level<=2 , "Peningkatan penggunaan perangkat lunak dalam pengelolaan data dan analisis teknis dalam rangka perencanaan dan pemantauan, evaluasi, serta pelaporan pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.2" & Level<=2 , "Pengadaan perangkat keras penunjang aktivitas perencanaan, pemantauan, evaluasi, dan pelaporan pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.3" & Level<=2 , "Penyediaan kapasitas jaringan yang mendukung proses perencanaan, pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.1" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.2" & Level<=2 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.3" & Level<=2 , "Penyusunan prosedur pelibatan berbagai pihak termasuk kabupaten/kota dan swasta dalam proses pemantauan, evaluasi, dan pelaporan program pembangunan rendah karbon", Rekomendasi)})
-    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.4" & Level<=2 , "Penyusunan prosedur pemanfaatan data pemantauan, evaluasi, dan pelaporan bagi kepentingan berbagai pihak", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.1" & Level<=3 , "Penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.2" & Level<=3 , "Sosialisasi Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD dan Pembuatan petunjuk operasional dalam regulasi yang mengatur PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.1" & Level<=3 , "Pengarusutamaan konsep pembangunan rendah karbon dalam visi misi daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.2" & Level<=3 , "Pengarusutamaan isu strategis pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.3" & Level<=3 , "Pengarusutamaan prioritas pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.4" & Level<=3 , "Pengarusutamaan indikator pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.5" & Level<=3 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.1" & Level<=3 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.2" & Level<=3 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.3" & Level<=3 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.4" & Level<=3 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.5" & Level<=3 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.1" & Level<=3 , "Revitalisasi organisasi kelompok kerja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.2" & Level<=3 , "Adaptasi struktur organisasi yang disesuaikan dengan kebutuhan implementasi pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.3" & Level<=3 , "Penyusunan mekanisme pengambilan keputusan yang inklusif dan berbasiskan data yang shahih", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.4" & Level<=3 , "Penyusunan prosedur/proses kerja serta pengelolaan kelembagaan yang mencakup seluruh aktivitas Pokja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.5" & Level<=3 , "Fasilitasi penyediaan anggaran bagi operasional Pokja termasuk proses penganggaran di dalam APBD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.6" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.7" & Level<=3 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.1" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.2" & Level<=3 , "Penguatan kapasitas anggota Pokja dalam proses pengarusutamaan PPRKD ke dalam perencanaan pembangunan daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.3" & Level<=3 , "Penguatan kapasitas anggota Pokja dalam proses penulisan/pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.4" & Level<=3 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.5" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.1" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.2" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.3" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.4" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.1" & Level<=3 , "Penyediaan data yang berkualitas dalam pelaksanaan PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.2" & Level<=3 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.3" & Level<=3 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.1" & Level<=3 , "Peningkatan penggunaan perangkat lunak dalam pengelolaan data dan analisis teknis dalam rangka perencanaan dan pemantauan, evaluasi, serta pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.2" & Level<=3 , "Pengadaan perangkat keras penunjang aktivitas perencanaan, pemantauan, evaluasi, dan pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.3" & Level<=3 , "Penyediaan kapasitas jaringan yang mendukung proses perencanaan, pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.1" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.2" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.3" & Level<=3 , "Penyusunan prosedur pelibatan berbagai pihak termasuk kabupaten/kota dan swasta dalam proses pemantauan, evaluasi, dan pelaporan program pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.4" & Level<=3 , "Penyusunan prosedur pemanfaatan data pemantauan, evaluasi, dan pelaporan bagi kepentingan berbagai pihak", Rekomendasi)})
     
     tabel$Indikator <- prioritas$Indikator
     
@@ -1136,7 +1210,7 @@ server <- function(input, output, session) {
   # })
   
   output$downloadResults <- downloadHandler(
-    filename = paste0(input$categoryProvince, "_hasil.doc"),
+    filename = paste0(categoryProvince$provinsi, "_hasil.doc"),
     content = function(file){
       graphSistem<-tablesCDA$summarySystem
       provOrg<-tablesCDA$summaryProvOrg
@@ -1215,7 +1289,7 @@ server <- function(input, output, session) {
       
   ## Isi unduhan hasil analisis ####
       title <- "\\b\\fs32 Hasil Analisis Penilaian Kapasistas Mandiri\\b0\\fs20"
-      fileresult = file.path(tempdir(), paste0(input$categoryProvince, "_hasil.doc"))
+      fileresult = file.path(tempdir(), paste0(categoryProvince$provinsi, "_hasil.doc"))
       rtffile <- RTF(fileresult, font.size = 9)
       addParagraph(rtffile, title)
       addNewLine(rtffile)
