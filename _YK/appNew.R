@@ -1,4 +1,6 @@
-# install.packages(c("shinydashboard", "shinyLP", "shinyjs", "ggplot2", "leaflet", "readxl", "magrittr", "rlang", "pylr", "dplyr", "DT", "koboloadeR", "rtf"))
+# install.packages(c("shinydashboard", "shinyLP", "shinyjs", "ggplot2", "leaflet", "readxl", "magrittr", "rlang", "pylr", "dplyr", "DT", "rtf"))
+# source("http://news.mrdwab.com/install_github.R")
+# install_github("mrdwab/koboloadeR")
 
 ###*initiate library##
 library(shiny)
