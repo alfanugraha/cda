@@ -1,3 +1,5 @@
+# install.packages(c("shinydashboard", "shinyLP", "shinyjs", "ggplot2", "leaflet", "readxl", "magrittr", "rlang", "pylr", "dplyr", "DT", "koboloadeR", "rtf"))
+
 ###*initiate library##
 library(shiny)
 library(shinydashboard)
@@ -5,41 +7,129 @@ library(shinyLP)
 library(shinyjs)
 library(ggplot2)
 library(plotly)
-
 library(leaflet)
 library(readxl)
 library(magrittr)
 library(rlang)
+library(plyr)
 library(dplyr)
+library(DT)
+library(koboloadeR)
+library(rtf)
 
 ###*setup dashboard page####
 ui <- source('interface.R')
 
-# Define server logic required to draw a histogram
+# Mengunduh data secara langsung
+dataSistem<-kobo_data_downloader("327419", "cdna2019:Icraf2019!")
+dataOrganisasi<-kobo_data_downloader("327585", "cdna2019:Icraf2019!")
+dataIndividu<-kobo_data_downloader("327418", "cdna2019:Icraf2019!")
+
+# user_database <- read.csv("_YK/login/user.csv", sep = ";")
+# user_database$provinsi <- as.character(user_database$provinsi)
+# saveRDS(user_database, "_YK/login/user_database")
+
+saveRDS(dataSistem, "data/dataSistem")
+saveRDS(dataOrganisasi, "data/dataOrganisasi")
+saveRDS(dataIndividu, "data/dataIndividu")
+
+###*Define server logic####
 server <- function(input, output, session) {
-  tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame())
+  # source("login/login-server.R", local = TRUE)
   
-  ###SISTEM###
+  tablesCDA <- reactiveValues(summarySystem=data.frame(),summaryOrg=data.frame(), summaryInd=data.frame(), allSummary=data.frame(), summaryProvInd=data.frame(), summaryProvOrg=data.frame(), priorityTable=data.frame())
+  final_chart <- reactiveValues(chartSistem=NULL, chartOrganisasi=NULL, chartIndividu=NULL, chartSummary=NULL)
+  graph_data <- reactiveValues(provInd=NULL, provOrg=NULL, graphSistem=NULL, chartSummary=NULL)
+  
+  categoryProvince <- reactiveValues(provinsi=NULL)
+
+  user_database<-readRDS("login/user_database")
+  # categoryProvince <- eventReactive(input$inputSetting, {
+  #   if(length(which(user_database$username==input$username))==1){
+  #     showModal(ui=modalDialog("Anda Berhasil Masuk", easyClose = TRUE), session=session)
+  #     selectedDatabase = filter(user_database, username==input$username) 
+  #     categoryProvince = selectedDatabase$provinsi
+  #   } else {
+  #     showModal(ui=modalDialog("Nama Pengguna Salah", easyClose = FALSE), session=session)  
+  #     categoryProvince = NULL
+  #     }
+  # })
+  
+  observeEvent(input$inputSetting, {
+    if(length(which(user_database$username==input$username & user_database$password==input$password))==1){
+      showModal(ui=modalDialog("Anda Berhasil Masuk", easyClose = TRUE), session=session)
+      selectedDatabase = filter(user_database, username==input$username) 
+      categoryProvince$provinsi = selectedDatabase$provinsi
+    } else {
+      showModal(ui=modalDialog("Nama Pengguna atau Kata Sandi Salah", easyClose = FALSE), session=session)  
+      categoryProvince$provinsi = NULL
+    }
+  })
+  
+  output$titleSistem <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Sistem Provinsi ", categoryProvince$provinsi) })
+  output$titleOrganisasi <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Organisasi Provinsi ", categoryProvince$provinsi) })
+  output$titleOPD <- renderText({ paste0("Hasil Analisis ", input$selectizeInstitution) })
+  output$titleIndividu <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Individu Provinsi ", categoryProvince$provinsi) })
+  output$titleRangkuman <- renderText({ paste0("Rangkuman Keseluruhan Provinsi ", categoryProvince$provinsi) })
+  output$yearCDNA <- renderText({ paste0("Tahun: ", input$selectedYear) })
+  
+  ####MENU SISTEM####
   output$resTblSys <- renderDataTable({
-   
-    inputSys<-readRDS("data/fileSys")
     
-    inputSys$intro00<-NULL;inputSys$intro0a2<-NULL; inputSys$logo0<-NULL; inputSys$logo<-NULL; inputSys$intro0<-NULL; inputSys$intro0a<-NULL; inputSys$url_widget2<-NULL; inputSys$intro1<-NULL;
-    inputSys$X_index<-NULL;inputSys$X_validation_status<-NULL; inputSys$X_submission_time<-NULL; inputSys$X_uuid<-NULL; inputSys$X_id<-NULL
-    inputSys$intropenutup<-NULL; inputSys$intropenutup2<-NULL; inputSys$introSistem<-NULL; inputSys$introregulasi<-NULL; inputSys$introintegrasi1<-NULL; 
-    inputSys$introproses1<-NULL; inputSys$introdatainfo1<-NULL;inputSys$intropemantauan1<-NULL
-    inputSys$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("inputSys$alasan_00",i,"<-NULL")))
+    inputSistem<-readRDS("data/dataSistem")
+    inputSistem$year <- format(as.Date(inputSistem$`provinsi/tanggal`), format = "%Y")
+    inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
+    
+    inputSistem$`meta/instanceID`<-NULL; inputSistem$`__version__`<-NULL; inputSistem$`_uuid`<-NULL; inputSistem$`_submission_time`<-NULL; inputSistem$`_tags`<-NULL; inputSistem$`_notes`<-NULL
+    
+    inputSistem$`regulasi/regulasi1/alasan`<-NULL
+    inputSistem$`regulasi/regulasi2/alasan_001`<-NULL
+    inputSistem$`integrasi1/integrasi2/alasan_002`<-NULL
+    inputSistem$`integrasi1/integrasi3/alasan_003`<-NULL
+    inputSistem$`integrasi1/integrasi4/alasan_004`<-NULL
+    inputSistem$`integrasi1/integrasi5/alasan_005`<-NULL
+    inputSistem$`integrasi1/integrasi6/alasan_006`<-NULL
+    inputSistem$`integrasi1/integrasi6/alasan_007`<-NULL
+    inputSistem$`proses1/proses2/alasan_008`<-NULL
+    inputSistem$`proses1/proses2_001/alasan_009`<-NULL
+    inputSistem$`proses1/proses3/alasan_010`<-NULL
+    inputSistem$`proses1/proses4/alasan_011`<-NULL
+    inputSistem$`proses1/proses4_001/alasan_012`<-NULL
+    
+    for (i in 13:31){
+      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo2/alasan_0",i,"`","<-NULL")))
     }
     
-    for (i in 10:68){
-      eval(parse(text=paste0("inputSys$alasan_0",i,"<-NULL")))
+    for (i in 32:50){
+      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo3/alasan_0",i,"`","<-NULL")))
     }
     
-    inputSys<-as.data.frame(inputSys)
-    inputSys[is.na(inputSys)]<-3
-    sistem<- as.data.frame(lapply(inputSys[,3:length(inputSys)], as.numeric))
+    for (i in 51:52){
+      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 53:57){
+      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 58:63){
+      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 64:66){
+      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 67:68){
+      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    inputSistem<-as.data.frame(inputSistem)
+    inputSistem$`pemantauan1/pemantauan3/q9.2.6`[inputSistem$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
+    inputSistem$`pemantauan1/pemantauan5/q9.4.1`[inputSistem$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
+    inputSistem$`pemantauan1/pemantauan5/q9.4.2`[inputSistem$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
+    inputSistem[is.na(inputSistem)]<-3
+    sistem<- as.data.frame(lapply(inputSistem[,3:length(inputSistem)], as.numeric))
     
     q2.5<-rowSums(sistem[,9:10]); q2.5<- as.data.frame(q2.5)/2
     q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
@@ -50,7 +140,7 @@ server <- function(input, output, session) {
     q9.3<-rowSums(sistem[,65:67]); q9.3<-as.data.frame(q9.3)/3
     q9.4<-rowSums(sistem[,68:69]); q9.4<-as.data.frame(q9.4)/2
     
-    levelSistem<-cbind(inputSys$provinsi_001,sistem$q1.1,sistem$q1.2,sistem$q2.1,sistem$q2.2,sistem$q2.3, sistem$q2.4, q2.5,sistem$q3.1,sistem$q3.2,sistem$q3.3,sistem$q3.4,sistem$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
+    levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2, sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5,sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3 ,sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
     colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
     
     gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
@@ -63,57 +153,138 @@ server <- function(input, output, session) {
     file_indSys<- read.table("init/system.csv", header=TRUE, sep=",")
     indikatorSys <- as.data.frame(unique(file_indSys$Kapasitas_Fungsional))
     
-    #Menampilkan hasil satu responden
-    tempSistem<-filter(tempSistem,Provinsi==input$categoryProvince)
-    # tempSistem<-filter(tempSistem,Provinsi=="Nusa Tenggara Barat")
+    ## Menampilkan hasil satu provinsi ##
+    tempSistem<-filter(tempSistem,Provinsi==categoryProvince$provinsi)
+    # tempSistem<-filter(tempSistem,Provinsi=="Aceh")
     
-    #Hasil per Aspek
-    Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+    ## Membuat tabel Level setiap aspek ##
+    aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
     LevelReg<-mean(as.matrix(tempSistem[,2:3])); LevelInt<-mean(as.matrix(tempSistem[4:8])); LevelProses<-mean(as.matrix(tempSistem[9:13])); LevelData<-mean(as.matrix(tempSistem[14:16])); LevelPEP<-mean(as.matrix(tempSistem[17:20]))
     allLevelSys<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
-    # gapReg<-mean(as.matrix(tempSistem[21:22])); gapInt<-mean(as.matrix(tempSistem[23:27])); gapProses<-mean(as.matrix(tempSistem[28:32])); gapData<-mean(as.matrix(tempSistem[33:35])); gapPEP<-mean(as.matrix(tempSistem[36:39]))
+    allLevelSys<-round(allLevelSys,digits = 2)
     gapReg<-5-LevelReg; gapInt<-5-LevelInt; gapProses<-5-LevelProses; gapData<-5-LevelData; gapPEP<-5-LevelPEP
     allGapSys<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    tingkatSys<-as.data.frame(cbind(Indikator_Penilaian, allLevelSys, allGapSys))
+    allGapSys<-round(allGapSys, digits=2)
+    tingkatSys<-as.data.frame(cbind(aspekSys, allLevelSys, allGapSys))
     colnames(tingkatSys)<-c("Aspek Penilaian","Level","GAP")
+    tingkatSys<-datatable(tingkatSys,escape = FALSE, rownames = FALSE)
     
-    ##BAR CHART
+    ## Membuat bar chart untuk tingkat Sistem ##
     t_tempSistem <- t(tempSistem[2:length(tempSistem)])
     provSys <- rowMeans(t_tempSistem)
-    graphSistem<-cbind(indikatorSys,provSys[1:19],provSys[20:38])
+    provSys<-round(provSys, digits = 2)
+    graphSistem<-as.data.frame(cbind(indikatorSys,provSys[1:19],provSys[20:38]))
     colnames(graphSistem)<-c("Indikator","Level","GAP")
     tablesCDA$summarySystem <- graphSistem
     
     tingkatSys
+    # datatable(tingkatSys,escape = FALSE, rownames = FALSE)
+    
+    # if(is.null(tingkatSys$Level)==TRUE) {
+    #   showModal(ui=modalDialog("Data pada tahun ini belum tersedia", easyClose = TRUE), session=session)
+    #   } else if(is.null(tingkatSys$Level)==FALSE) {
+    #     print(tingkatSys)
+    #   }
   })
-  
+
   output$resChartSys <- renderPlotly({
     graphSistem <- tablesCDA$summarySystem  
     plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
-      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Sistem") 
-  })
+      layout(yaxis=list(title='Indikator'), barmode='stack')
+    })
   
-  ###ORGANISASI###
+  ## ggplot untuk unduh hasil anlisis ##
+    output$resChartSys2 <- renderPlotly({
+      nilai1 <- t(graphSistem$Level)
+      nilai2 <- t(graphSistem$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(graphSistem$Level)))
+      jenis2 <- t(rep("Gap", length(graphSistem$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(graphSistem$Indikator)
+      dataGraphSys <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphSys) <- c("jenis", "nilai", "indikator")
+      
+      dataGraphSys <- ddply(dataGraphSys, .(indikator),
+                            transform, pos = cumsum(nilai)-nilai)
+      chartSys<-ggplot() + geom_bar(data=dataGraphSys, aes(x=indikator, y=nilai, fill=jenis), stat="identity") + 
+        geom_text(data=dataGraphSys, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
+      
+      final_chart$chartSistem <- chartSys 
+    })
+  
+  ####MENU ORGANISASI####
+  ## Hasil Analisis setiap OPD ###
   output$resTblOrg <- renderDataTable({
-    inputOrg<-readRDS("data/fileOrg")
+    inputOrganisasi<-readRDS("data/dataOrganisasi")
     
-    inputOrg$intro00<-NULL; inputOrg$intro0a2<-NULL; inputOrg$logo0<-NULL; inputOrg$logo<-NULL; inputOrg$intro0<-NULL; inputOrg$intro0a<-NULL
-    inputOrg$url_widget2<-NULL; inputOrg$intro1a<-NULL; inputOrg$jabatan<-NULL
-    #inputOrg$nama<-NULL; inputOrg$institusi<-NULL; inputOrg$tanggal<-NULL; 
-    inputOrg$introOrganisasi<-NULL; inputOrg$introperangkat1<-NULL; inputOrg$introsdm1<-NULL; inputOrg$introteknologi1<-NULL
-    inputOrg$X_index<-NULL; inputOrg$X_validation_status<-NULL; inputOrg$X_submission_time<-NULL; inputOrg$X_uuid<-NULL; inputOrg$X_id<-NULL; inputOrg$intropenutup1<-NULL; inputOrg$intropenutup<-NULL
-    inputOrg$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("inputOrg$alasan_00",i,"<-NULL")))
+    inputOrganisasi$`profil/jabatan`<-NULL; inputOrganisasi$`meta/instanceID`<-NULL; inputOrganisasi$`__version__`<-NULL
+    inputOrganisasi$`_uuid`<-NULL; inputOrganisasi$`_submission_time`<-NULL; inputOrganisasi$`_tags`<-NULL; inputOrganisasi$`_notes`<-NULL
+    
+    inputOrganisasi$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
+    inputOrganisasi$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
+    
+    for (i in 2:4){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
     }
     
-    for (i in 10:44){
-      eval(parse(text=paste0("inputOrg$alasan_0",i,"<-NULL")))
+    for (i in 5:6){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
+    }
+    for (i in 7:9){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
+    }
+    inputOrganisasi$`perangkat1/perangkat4/alasan_010`<-NULL
+    
+    for (i in 11:13){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
     }
     
-    inputOrg<-as.data.frame(inputOrg)
-    organisasi<- as.data.frame(lapply(inputOrg[,5:length(inputOrg)], as.numeric))
+    for (i in 14:15){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 16:22){
+      eval(parse(text=paste0("inputOrganisasi$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 23:29){
+      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    inputOrganisasi$`sdm1/sdm3/alasan_030`<-NULL
+    inputOrganisasi$`sdm1/sdm4/alasan_031`<-NULL
+    
+    for (i in 32:33){
+      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 34:35){
+      eval(parse(text=paste0("inputOrganisasi$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 36:39){
+      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 40:42){
+      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 43:44){
+      eval(parse(text=paste0("inputOrganisasi$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    inputOrganisasi$`perangkat1/perangkat4/q4.4.3`[inputOrganisasi$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
+    inputOrganisasi[inputOrganisasi == "n/a"]  <- NA
+    inputOrganisasi <- na.omit(inputOrganisasi)
+    inputOrganisasi$year <- format(as.Date(inputOrganisasi$`profil/tanggal`), format = "%Y")
+    inputOrganisasi<-filter(inputOrganisasi,inputOrganisasi$year==input$selectedYear)
+    year <- inputOrganisasi$year
+    # inputOrganisasi<-as.data.frame(inputOrganisasi)
+    
+    organisasi<- as.data.frame(lapply(inputOrganisasi[,5:(length(inputOrganisasi)-1)], as.numeric))
     
     q4.1<-rowSums(organisasi[,1:2]); q4.1<- as.data.frame(q4.1)/2
     q4.2<-rowSums(organisasi[,3:5]); q4.2<- as.data.frame(q4.2)/3
@@ -123,24 +294,25 @@ server <- function(input, output, session) {
     q4.6<-rowSums(organisasi[,15:16]); q4.6<- as.data.frame(q4.6)/2
     q4.7<-rowSums(organisasi[,17:23]); q4.7<- as.data.frame(q4.7)/7
     q5.1<-rowSums(organisasi[,24:30]); q5.1<- as.data.frame(q5.1)/7
-    q5.2<-organisasi$q5.2; q5.3<-organisasi$q5.3
+    q5.2<-organisasi$sdm1.sdm3.q5.2; q5.3<-organisasi$sdm1.sdm4.q5.3
     q5.4<-rowSums(organisasi[,33:34]); q5.4<- as.data.frame(q5.4)/2
     q5.5<-rowSums(organisasi[,35:36]); q5.5<- as.data.frame(q5.5)/2
     q8.1<-rowSums(organisasi[,37:40]); q8.1<- as.data.frame(q8.1)/4
     q8.2<-rowSums(organisasi[,41:43]); q8.2<- as.data.frame(q8.2)/3
     q8.3<-rowSums(organisasi[,44:45]); q8.3<- as.data.frame(q8.3)/2
-    valOrganisasi <- cbind(inputOrg$provinsi,inputOrg$institusi,inputOrg$nama,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
-    tempOrganisasi<-as.data.frame(valOrganisasi)
+    valOrganisasi <- cbind(inputOrganisasi$`profil/provinsi`,inputOrganisasi$`profil/institusi`,inputOrganisasi$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    colnames(valOrganisasi)<-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3")
+    tempOrganisasi<-as.data.frame(cbind(valOrganisasi,year))
     
     file_indOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
     indikatorOrg <- as.data.frame(unique(file_indOrg$Kapasitas_Fungsional))
     colnames(indikatorOrg)<-"Indikator"
     
-    #Menampilkan hasil OPD
-    # tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi==input$categoryProvince & inputOrg$institusi==input$selectizeInstitution) #buat field insitution
-    tempOrganisasi<-filter(tempOrganisasi,inputOrg$provinsi=="Bengkulu" & inputOrg$institusi=="Bappeda provinsi Bengkulu")
+    ## Menampilkan hasil OPD per provinsi ##
+    tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi==categoryProvince$provinsi & valOrganisasi$Institusi==input$selectizeInstitution) #buat field insitution
+    # tempOrganisasi<-filter(valOrganisasi,valOrganisasi$Provinsi=="Sulawesi Selatan" & valOrganisasi$Institusi=="bappeda")
     
-    #Hasi per Aspek
+    ## Membuat tabel Level setiap aspek ##
     Level4<-rowSums(tempOrganisasi[,4:10])/length(tempOrganisasi[,4:10])
     LevelOrg<-mean(Level4)
     Level5 <- rowSums(tempOrganisasi[,11:15])/length(tempOrganisasi[,11:15])
@@ -148,233 +320,652 @@ server <- function(input, output, session) {
     Level8 <- rowSums(tempOrganisasi[,16:18])/length(tempOrganisasi[,16:18])
     LevelTek<-mean(Level8)
     LevelOrg_gabungan<-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
+    LevelOrg_gabungan<-round(LevelOrg_gabungan,digits = 2)
     gapOrg_gabungan<-5-LevelOrg_gabungan
-    Aspek_Penilaian<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
-    tingkatOrg<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
+    gapOrg_gabungan<-round(gapOrg_gabungan,digits = 2)
+    aspekOrg<-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
+    tingkatOrg<-as.data.frame(cbind(aspekOrg, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(tingkatOrg)<- c("Aspek Penilaian", "Level", "GAP")
     
-    #Bar Chart
+    ## Membuat bar chart untuk tingkat Organisasi ##
     Ind4.1<-mean(tempOrganisasi$q4.1); Ind4.2<-mean(tempOrganisasi$q4.2); Ind4.3<-mean(tempOrganisasi$q4.3); Ind4.4<-mean(tempOrganisasi$q4.4); Ind4.5<-mean(tempOrganisasi$q4.5); Ind4.6<-mean(tempOrganisasi$q4.6); Ind4.7<-mean(tempOrganisasi$q4.7)
     Ind5.1<-mean(tempOrganisasi$q5.1); Ind5.2<-mean(tempOrganisasi$q5.2); Ind5.3<-mean(tempOrganisasi$q5.3); Ind5.4<-mean(tempOrganisasi$q5.4); Ind5.5<-mean(tempOrganisasi$q5.5)
     Ind8.1<-mean(tempOrganisasi$q8.1);Ind8.2<-mean(tempOrganisasi$q8.2);Ind8.3<-mean(tempOrganisasi$q8.3)
     tempLevelOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    tempLevelOrg<-round(tempLevelOrg,digits = 2)
     tempGapOrg<- 5-tempLevelOrg
+    tempGapOrg<-round(tempGapOrg, digits = 2)
     graphOrg<-cbind(indikatorOrg,tempLevelOrg,tempGapOrg)
     colnames(graphOrg)<-c("Indikator","Level","GAP")
     tablesCDA$summaryOrg <- graphOrg
     
-    tingkatOrg
+    datatable(tingkatOrg,escape = FALSE, rownames = FALSE)
   })
   
   output$resChartOrg <- renderPlotly({
     graphOrg <- tablesCDA$summaryOrg 
     plot_ly(graphOrg, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
-      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Organisasi") 
+      layout(yaxis=list(title='Indikator'), barmode='stack') 
+    
   })
   
   output$selectizeInstitution <- renderUI({
-    inputOrg<-readRDS("data/fileOrg")
+    inputOrg<-readRDS("data/dataOrganisasi")
     
-    inputOrg$intro00<-NULL; inputOrg$intro0a2<-NULL; inputOrg$logo0<-NULL; inputOrg$logo<-NULL; inputOrg$intro0<-NULL; inputOrg$intro0a<-NULL
-    inputOrg$url_widget2<-NULL; inputOrg$intro1a<-NULL; inputOrg$jabatan<-NULL
-    #inputOrg$nama<-NULL; inputOrg$institusi<-NULL; inputOrg$tanggal<-NULL; 
-    inputOrg$introOrganisasi<-NULL; inputOrg$introperangkat1<-NULL; inputOrg$introsdm1<-NULL; inputOrg$introteknologi1<-NULL
-    inputOrg$X_index<-NULL; inputOrg$X_validation_status<-NULL; inputOrg$X_submission_time<-NULL; inputOrg$X_uuid<-NULL; inputOrg$X_id<-NULL; inputOrg$intropenutup1<-NULL; inputOrg$intropenutup<-NULL
-    inputOrg$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("inputOrg$alasan_00",i,"<-NULL")))
+    inputOrg$`profil/jabatan`<-NULL; inputOrg$`meta/instanceID`<-NULL; inputOrg$`__version__`<-NULL
+    inputOrg$`_uuid`<-NULL; inputOrg$`_submission_time`<-NULL; inputOrg$`_tags`<-NULL; inputOrg$`_notes`<-NULL
+
+    inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
+    inputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
+    
+    for (i in 2:4){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
     }
     
-    for (i in 10:44){
-      eval(parse(text=paste0("inputOrg$alasan_0",i,"<-NULL")))
+    for (i in 5:6){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
     }
+    for (i in 7:9){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
+    }
+    
+    inputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
+    
+    for (i in 11:13){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 14:15){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 16:22){
+      eval(parse(text=paste0("inputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 23:29){
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    inputOrg$`sdm1/sdm3/alasan_030`<-NULL
+    inputOrg$`sdm1/sdm4/alasan_031`<-NULL
+    
+    for (i in 32:33){
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 34:35){
+      eval(parse(text=paste0("inputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 36:39){
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 40:42){
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 43:44){
+      eval(parse(text=paste0("inputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    inputOrg$`perangkat1/perangkat4/q4.4.3`[inputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
+    inputOrg[inputOrg == "n/a"]  <- NA
+    inputOrg <- na.omit(inputOrg)
+    inputOrg$year <- format(as.Date(inputOrg$`profil/tanggal`), format = "%Y")
+    inputOrg<-filter(inputOrg,inputOrg$year==input$selectedYear)
     inputOrg<-as.data.frame(inputOrg)
     
+    institution<-filter(inputOrg,inputOrg$`profil/provinsi`==categoryProvince$provinsi)
+    # institution<-filter(inputOrg,inputOrg$`profil/provinsi`=="Sumatera Selatan")
+    
     selectizeInput('selectizeInstitution', 'Pilih OPD Anda', choices=list(
-      OPD=as.character(sort(inputOrg$institusi))
+      OPD=as.character(sort(institution$`profil/institusi`))
     ), multiple=FALSE)
   })
   
-  ###INDIVIDU###
-  output$resTblInd <- renderDataTable({
-    inputInd<-readRDS("data/fileInd")
+  ### Ringkasan Hasil Organisasi ###
+  output$resTblOrgAll <- renderDataTable({
+    summInputOrg<-readRDS("data/dataOrganisasi")
     
-    inputInd$intro00<-NULL; inputInd$intro0a2<-NULL; inputInd$logo0<-NULL; inputInd$logo<-NULL; inputInd$intro0<-NULL; inputInd$intro0a<-NULL; inputInd$intro1a<-NULL
-    inputInd$gender<-NULL; inputInd$jabatan<-NULL; inputInd$akun <- NULL; #inputInd$tanggal<-NULL
-    inputInd$introIndividu<-NULL; inputInd$introSDM2<-NULL; inputInd$X_index<-NULL; inputInd$X_validation_status<-NULL
-    inputInd$X_submission_time<-NULL; inputInd$X_uuid<-NULL; inputInd$X_id<-NULL; inputInd$intropenutup<-NULL
-    inputInd$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("inputInd$alasan_00",i,"<-NULL")))
+    summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
+    summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
+    
+    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
+    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
+    
+    for (i in 2:4){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
     }
     
-    for (i in 10:22){
-      eval(parse(text=paste0("inputInd$alasan_0",i,"<-NULL")))
+    for (i in 5:6){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
+    }
+    for (i in 7:9){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
+    }
+    summInputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
+    
+    for (i in 11:13){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
     }
     
-    inputInd<-as.data.frame(inputInd)
-    inputInd<-na.omit(inputInd)
-    individu<- as.data.frame(lapply(inputInd[,7:length(inputInd)], as.numeric))
+    for (i in 14:15){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
+    }
     
-    q6.1<-rowSums(individu[,1:2]); q6.1<-as.data.frame(q6.1)/2
-    q6.2<-rowSums(individu[,3:11]); q6.2<-as.data.frame(q6.2)/9
-    q6.3<-rowSums(individu[,12:20]); q6.3<-as.data.frame(q6.3)/9
-    q6.4<-rowSums(individu[,21:23]); q6.4<-as.data.frame(q6.4)/3
-    valInd<-cbind(inputInd$provinsi,inputInd$nama, q6.1,q6.2,q6.3,q6.4)
-    tempIndividu<-as.data.frame(valInd)
+    for (i in 16:22){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
+    }
     
-    indikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
-    indikatorInd  <- as.data.frame(indikatorInd)
+    for (i in 23:29){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
+    }
     
-    tempIndividu<-filter(inputInd,inputInd$provinsi==input$categoryProvince & inputInd$nama==input$selectizeName)
-    tempIndividu<-filter(inputInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
+    summInputOrg$`sdm1/sdm3/alasan_030`<-NULL
+    summInputOrg$`sdm1/sdm4/alasan_031`<-NULL
     
-    #Hasil per Aspek
-    Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    Level6<-rowMeans(tempIndividu[7:length(tempIndividu)])
-    gap6<-5-Level6
-    tingkatInd<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
-    colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
-
-    ##BAR Chart
-    valInd <- filter(valInd,inputInd$provinsi=="Bengkulu" & inputInd$nama=="Yudan")
-    Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
-    tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
-    tempGapInd <- 5 - tempLevelInd
-    graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
-    colnames(graphInd)<-c("Indikator","Level","GAP")
-    tablesCDA$summaryInd <- graphInd
+    for (i in 32:33){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
+    }
     
-    tingkatInd
+    for (i in 34:35){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 36:39){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 40:42){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 43:44){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
+    summInputOrg[summInputOrg == "n/a"]<-NA
+    summInputOrg<-na.omit(summInputOrg)
+    summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
+    year <- summInputOrg$year
+    summInputOrg<-as.data.frame(summInputOrg)
+    
+    summOrg<-as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
+    
+    q4.1<-rowSums(summOrg[,1:2]); q4.1<-as.data.frame(q4.1)/2
+    q4.2<-rowSums(summOrg[,3:5]); q4.2<-as.data.frame(q4.2)/3
+    q4.3<-rowSums(summOrg[,6:7]); q4.3<-as.data.frame(q4.3)/2
+    q4.4<-rowSums(summOrg[,8:11]); q4.4<-as.data.frame(q4.4)/4
+    q4.5<-rowSums(summOrg[,12:14]); q4.5<-as.data.frame(q4.5)/3
+    q4.6<-rowSums(summOrg[,15:16]); q4.6<-as.data.frame(q4.6)/2
+    q4.7<-rowSums(summOrg[,17:23]); q4.7<-as.data.frame(q4.7)/7
+    q5.1<-rowSums(summOrg[,24:30]); q5.1<-as.data.frame(q5.1)/7
+    q5.2<-summOrg$sdm1.sdm3.q5.2; q5.3<-summOrg$sdm1.sdm4.q5.3
+    q5.4<-rowSums(summOrg[,33:34]); q5.4<-as.data.frame(q5.4)/2
+    q5.5<-rowSums(summOrg[,35:36]); q5.5<-as.data.frame(q5.5)/2
+    q8.1<-rowSums(summOrg[,37:40]); q8.1<-as.data.frame(q8.1)/4
+    q8.2<-rowSums(summOrg[,41:43]); q8.2<-as.data.frame(q8.2)/3
+    q8.3<-rowSums(summOrg[,44:45]); q8.3<-as.data.frame(q8.3)/2
+    valOrganisasi <-cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    colnames(valOrganisasi) <-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
+    summTempOrganisasi <-as.data.frame(cbind(valOrganisasi,year))
+    
+    indikatorOrg <-read.table("init/organisation.csv", header=TRUE, sep=",")
+    summIndikatorOrg <-as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
+    colnames(summIndikatorOrg) <-"Indikator"
+    
+    ## Menampilkan hasil satu provinsi untuk tingkat organisasi ##
+    summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
+    # summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
+    
+    ## Membuat tabel Level setiap aspek ##   
+    Level4 <-rowSums(summTempOrganisasi[,4:10])/length(summTempOrganisasi[,4:10])
+    LevelOrg <-mean(Level4)
+    Level5 <-rowSums(summTempOrganisasi[,11:15])/length(summTempOrganisasi[,11:15])
+    LevelSDM <-mean(Level5)
+    Level8 <-rowSums(summTempOrganisasi[,16:18])/length(summTempOrganisasi[,16:18])
+    LevelTek <-mean(Level8)
+    LevelOrg_gabungan <-as.data.frame(t(cbind(LevelOrg,LevelSDM,LevelTek)))
+    LevelOrg_gabungan <- round(LevelOrg_gabungan, digits = 2)
+    gapOrg_gabungan <-5-LevelOrg_gabungan
+    Aspek_Penilaian <-c("4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi")
+    summOrganisasi <-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
+    colnames(summOrganisasi) <- c("Aspek Penilaian", "Level", "GAP")
+    summOrganisasi<-datatable(summOrganisasi,escape = FALSE, rownames = FALSE)
+    
+    ## Menampilkan level per indikator ##
+    Ind4.1 <-mean(summTempOrganisasi$q4.1); Ind4.2<-mean(summTempOrganisasi$q4.2); Ind4.3<-mean(summTempOrganisasi$q4.3); Ind4.4<-mean(summTempOrganisasi$q4.4); Ind4.5<-mean(summTempOrganisasi$q4.5); Ind4.6<-mean(summTempOrganisasi$q4.6); Ind4.7<-mean(summTempOrganisasi$q4.7)
+    Ind5.1 <-mean(summTempOrganisasi$q5.1); Ind5.2<-mean(summTempOrganisasi$q5.2); Ind5.3<-mean(summTempOrganisasi$q5.3); Ind5.4<-mean(summTempOrganisasi$q5.4); Ind5.5<-mean(summTempOrganisasi$q5.5)
+    Ind8.1 <-mean(summTempOrganisasi$q8.1);Ind8.2<-mean(summTempOrganisasi$q8.2);Ind8.3<-mean(summTempOrganisasi$q8.3)
+    levelProvOrg <-as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    levelProvOrg <-round(levelProvOrg,digits = 2)
+    gapProvOrg <-5-levelProvOrg
+    provOrg <-as.data.frame(cbind(summIndikatorOrg,levelProvOrg,gapProvOrg))
+    colnames(provOrg) <-c("Indikator", "Level", "GAP")
+    tablesCDA$summaryProvOrg <-provOrg
+    
+    summOrganisasi
+    #datatable(summOrganisasi,escape = FALSE, rownames = FALSE)
   })
+  
+  output$resChartOrgAll <- renderPlotly({
+    provOrg <-tablesCDA$summaryProvOrg
+    plot_ly(provOrg, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+      add_trace(x=~GAP, name= 'GAP') %>%
+      layout(yaxis=list(title='Indikator'), barmode='stack')
+  })
+  
+  ## ggplot untuk unduh hasil anlisis ##
+    output$resChartOrgAll2 <- renderPlotly({
+      nilai1 <- t(provOrg$Level)
+      nilai2 <- t(provOrg$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(provOrg$Level)))
+      jenis2 <- t(rep("Gap", length(provOrg$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(provOrg$Indikator)
+      dataGraphOrg <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphOrg) <- c("jenis", "nilai", "indikator")
+      
+      dataGraphOrg <- ddply(dataGraphOrg, .(indikator),
+                            transform, pos = cumsum(nilai)-nilai)
+      chartOrg<-ggplot() + geom_bar(data=dataGraphOrg, aes(x=indikator, y=nilai, fill=jenis), stat="identity") + 
+        geom_text(data=dataGraphOrg, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
+      
+      final_chart$chartOrganisasi<-chartOrg 
+    })
+    
+  ####MENU INDIVIDU####
+  
+  ### Hasil Analisis setiap Individu ###
+  # output$resTblInd <- renderDataTable({
+  #   inputIndividu<-readRDS("data/dataIndividu")
+  # 
+  #   inputIndividu$`profil/gender`<-NULL; inputIndividu$`profil/jabatan`<-NULL; inputIndividu$`profil/akun`<-NULL; inputIndividu$`profil/noHP`<-NULL; inputIndividu$`profil/email`<-NULL
+  #   inputIndividu$`meta/instanceID`<-NULL; inputIndividu$`__version__`<-NULL; inputIndividu$`_uuid`<-NULL; inputIndividu$`_submission_time`<-NULL; inputIndividu$`_tags`<-NULL; inputIndividu$`_notes`<-NULL
+  #   
+  #   inputIndividu$`sdm_i1/sdm_i2/alasan`<-NULL
+  #   inputIndividu$`sdm_i1/sdm_i2/alasan_001`<-NULL
+  #   
+  #   for (i in 2:9){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+  #   }
+  #   inputIndividu$`sdm_i1/sdm_i3/alasan_010`<-NULL
+  #   
+  #   for (i in 11:19){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
+  #   }
+  #   
+  #   for (i in 20:22){
+  #     eval(parse(text=paste0("inputIndividu$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
+  #   }
+  #   
+  #   # Menghilangkan n/a pada data frame #
+  #   inputIndividu[inputIndividu == "n/a"]  <- NA
+  #   inputIndividu <- na.omit(inputIndividu)
+  #   inputIndividu$year <- format(as.Date(inputIndividu$`profil/tanggal`), format = "%Y")
+  #   inputIndividu<-filter(inputIndividu,inputIndividu$year==input$selectedYear)
+  #   year <- inputIndividu$year
+  #   
+  #   individu<- as.data.frame(lapply(inputIndividu[,5:(length(inputIndividu)-1)], as.numeric))
+  #   
+  #   q6.1<-rowSums(individu[,1:2]); q6.1<-as.data.frame(q6.1)/2
+  #   q6.2<-rowSums(individu[,3:11]); q6.2<-as.data.frame(q6.2)/9
+  #   q6.3<-rowSums(individu[,12:20]); q6.3<-as.data.frame(q6.3)/9
+  #   q6.4<-rowSums(individu[,21:23]); q6.4<-as.data.frame(q6.4)/3
+  #   valInd<-cbind(inputIndividu$`profil/provinsi`,inputIndividu$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
+  #   colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
+  #   tempIndividu<-as.data.frame(cbind(valInd, year))
+  #   
+  #   # Mendefinisikan nama setiap indikator #
+  #   indikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
+  #   indikatorInd  <- as.data.frame(indikatorInd)
+  #   
+  #   ## Menampilkan hasil satu induvidu per provinsi ##
+  #   tempIndividu<-filter(valInd,valInd$Provinsi==categoryProvince$provinsi & valInd$Nama==input$selectizeName)
+  #   #tempIndividu<-filter(valInd,valInd$Provinsi=="Aceh" & valInd$Nama=="Yumna")
+  #   
+  #   ## Membuat tabel Level setiap aspek ##
+  #   aspekInd<-"6. Sumber Daya Manusia - Individu"
+  #   Level6<-rowMeans(tempIndividu[3:length(tempIndividu)])
+  #   Level6<-round(Level6, digits = 2)
+  #   gap6<-5-Level6
+  #   gap6<-round(gap6, digits = 2)
+  #   tingkatInd<-as.data.frame(cbind(aspekInd, Level6, gap6))
+  #   colnames(tingkatInd)<-c("Aspek Penilaian","Level","GAP")
+  #   
+  #   ## Membuat bar chart untuk tingkat Individu ###
+  #   Ind6.1<-mean(tempIndividu$q6.1); Ind6.2<-mean(tempIndividu$q6.2); Ind6.3<-mean(tempIndividu$q6.3); Ind6.4<-mean(tempIndividu$q6.4)
+  #   tempLevelInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+  #   tempLevelInd<-round(tempLevelInd, digits = 2)
+  #   tempGapInd<-5-tempLevelInd
+  #   tempGapInd<-round(tempGapInd,digits = 2)
+  #   graphInd<-cbind(indikatorInd,tempLevelInd,tempGapInd)
+  #   colnames(graphInd)<-c("Indikator","Level","GAP")
+  #   tablesCDA$summaryInd <- graphInd
+  #   
+  #   datatable(tingkatInd,escape = FALSE, rownames = FALSE)
+  # })
   
   output$resChartInd <- renderPlotly({
     graphInd <- tablesCDA$summaryInd
     plot_ly(graphInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
-      layout(yaxis=list(title='Indikator'), barmode='stack', title="Level dan Gap Indikator Penilaian Kapasitas Tingkat Individu")
-  })
+      layout(yaxis=list(title='Indikator'), barmode='stack')
+     })
   
   output$selectizeName <- renderUI({
-    inputInd<-readRDS("data/fileInd")
+    inputInd<-readRDS("data/dataIndividu")
     
-    inputInd$intro00<-NULL; inputInd$intro0a2<-NULL; inputInd$logo0<-NULL; inputInd$logo<-NULL; inputInd$intro0<-NULL; inputInd$intro0a<-NULL; inputInd$intro1a<-NULL
-    inputInd$gender<-NULL; inputInd$jabatan<-NULL; inputInd$akun <- NULL; #inputInd$tanggal<-NULL
-    inputInd$introIndividu<-NULL; inputInd$introSDM2<-NULL; inputInd$X_index<-NULL; inputInd$X_validation_status<-NULL
-    inputInd$X_submission_time<-NULL; inputInd$X_uuid<-NULL; inputInd$X_id<-NULL; inputInd$intropenutup<-NULL
-    inputInd$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("inputInd$alasan_00",i,"<-NULL")))
+    inputInd$`profil/gender`<-NULL; inputInd$`profil/jabatan`<-NULL; inputInd$`profil/akun`<-NULL; inputInd$`profil/noHP`<-NULL; inputInd$`profil/email`<-NULL
+    inputInd$`meta/instanceID`<-NULL; inputInd$`__version__`<-NULL; inputInd$`_uuid`<-NULL; inputInd$`_submission_time`<-NULL; inputInd$`_tags`<-NULL; inputInd$`_notes`<-NULL
+    
+    inputInd$`sdm_i1/sdm_i2/alasan`<-NULL
+    inputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
+    
+    for (i in 2:9){
+      eval(parse(text=paste0("inputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+    }
+    inputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
+    
+    for (i in 11:19){
+      eval(parse(text=paste0("inputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
     }
     
-    for (i in 10:22){
-      eval(parse(text=paste0("inputInd$alasan_0",i,"<-NULL")))
+    for (i in 20:22){
+      eval(parse(text=paste0("inputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
     }
-    inputInd<-as.data.frame(inputInd)
-    inputInd<-na.omit(inputInd)
+    
+    #Menghilangkan n/a pada data frame#
+    inputInd[inputInd == "n/a"]  <- NA
+    inputInd <- na.omit(inputInd)
+    inputInd$year <- format(as.Date(inputInd$`profil/tanggal`), format = "%Y")
+    inputInd<-filter(inputInd,inputInd$year==input$selectedYear)
+    
+    name<-filter(inputInd,inputInd$`profil/provinsi`==categoryProvince$provinsi)
+    #name<-filter(inputInd,inputInd$`profil/provinsi`=="Aceh")
     
     selectizeInput('selectizeName', 'Pilih nama Anda', choices=list(
-      Nama=as.character(sort(inputInd$nama))
+      Nama=as.character(sort(name$`profil/nama`))
     ), multiple=FALSE)
   })
   
-  ###RANGKUMAN###
-  summInputSys<-readRDS("data/fileSys")
-  summInputOrg<-readRDS("data/fileOrg")
-  summInputInd<-readRDS("data/fileInd")
+  ### Ringkasan Hasil Inidividu ###
+  output$resTblIndAll <- renderDataTable({
+    summInputInd<-readRDS("data/dataIndividu")
+    
+    summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
+    summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
+    
+    summInputInd$`sdm_i1/sdm_i2/alasan`<-NULL
+    summInputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
+    
+    for (i in 2:9){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+    }
+    summInputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
+    
+    for (i in 11:19){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 20:22){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    ## Menghilangkan n/a pada data frame ##
+    summInputInd[summInputInd == "n/a"]  <- NA
+    summInputInd <- na.omit(summInputInd)
+    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    year <- summInputInd$year
+    summInputInd <- as.data.frame(summInputInd)
+    
+    summInd<- as.data.frame(lapply(summInputInd[,5:(length(summInputInd)-1)], as.numeric))
+    
+    q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
+    q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
+    q6.3<-rowSums(summInd[,12:20]); q6.3<-as.data.frame(q6.3)/9
+    q6.4<-rowSums(summInd[,21:23]); q6.4<-as.data.frame(q6.4)/3
+    valInd<-cbind(summInputInd$`profil/provinsi`,summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
+    colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
+    summTempIndividu<-as.data.frame(cbind(valInd,year))
+    
+    summIndikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
+    summIndikatorInd  <- as.data.frame(summIndikatorInd)
+    
+    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==categoryProvince$provinsi)
+    # summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
+    
+    ## Membuat tabel Level setiap aspek ##
+    Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
+    Level6<-mean(as.matrix(summTempIndividu[3:(length(summTempIndividu)-1)]))
+    Level6<-round(Level6,digits = 2)
+    gap6<-5-Level6
+    summIndividu<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
+    colnames(summIndividu)<-c("Aspek Penilaian","Level","GAP")
+    
+    ## Menampilkan level per indikator ##
+    Ind6.1<-mean(summTempIndividu$q6.1); Ind6.2<-mean(summTempIndividu$q6.2); Ind6.3<-mean(summTempIndividu$q6.3); Ind6.4<-mean(summTempIndividu$q6.4)
+    levelProvInd<-as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+    levelProvInd<-round(levelProvInd, digits=2)
+    gapProvInd<-5-levelProvInd
+    provInd<-as.data.frame(cbind(summIndikatorInd,levelProvInd,gapProvInd))
+    colnames(provInd)<-c("Indikator", "Level", "GAP")
+    tablesCDA$summaryProvInd <- provInd
+    
+    datatable(summIndividu,escape = FALSE, rownames = FALSE)
+  })
+  
+  output$resChartIndAll <- renderPlotly({
+    provInd <- tablesCDA$summaryProvInd
+    plot_ly(provInd, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
+      add_trace(x=~GAP, name= 'GAP') %>%
+      layout(yaxis=list(title='Indikator'), barmode='stack')
+  })
+  
+  ## ggplot untuk unduh hasil anlisis ##
+  output$resChartIndAll2 <- renderPlotly({
+    nilai1 <- t(provInd$Level)
+    nilai2 <- t(provInd$GAP)
+    nilai <- t(cbind(nilai1,nilai2))
+    jenis1 <- t(rep("Level", length(provInd$Level)))
+    jenis2 <- t(rep("Gap", length(provInd$GAP)))
+    jenis <- t(cbind(jenis1,jenis2))
+    indikator <- data.frame(provInd$Indikator)
+    dataGraphInd <- data.frame(cbind(jenis,nilai,indikator))
+    colnames(dataGraphInd) <- c("jenis", "nilai", "indikator")
+
+    dataGraphInd <- ddply(dataGraphInd, .(indikator),
+                          transform, pos = cumsum(nilai)-nilai)
+    chartInd<-ggplot() + geom_bar(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis), stat="identity") +
+      geom_text(data=dataGraphInd, aes(x =indikator, y =pos, label =paste0(nilai)), size=4)
+    
+    chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+      geom_bar(stat="identity") +
+      coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+      theme(legend.position="bottom", legend.direction="horizontal",
+            legend.title = element_blank())
+
+    final_chart$chartIndividu<-chartInd
+  })
+  
+  ####MENU RANGKUMAN####
   
   output$resTblSumm <- renderDataTable({
-    ##Sistem
-    # summInputSys<-readRDS("data/fileSys")
+    #### Tabel Prioritas Tingkat Sistem ####
+    summInputSys<-readRDS("data/dataSistem")
     
-    summInputSys$intro00<-NULL;summInputSys$intro0a2<-NULL; summInputSys$logo0<-NULL; summInputSys$logo<-NULL; summInputSys$intro0<-NULL; summInputSys$intro0a<-NULL; summInputSys$url_widget2<-NULL; summInputSys$intro1<-NULL;
-    summInputSys$X_index<-NULL;summInputSys$X_validation_status<-NULL; summInputSys$X_submission_time<-NULL; summInputSys$X_uuid<-NULL; summInputSys$X_id<-NULL
-    summInputSys$intropenutup<-NULL; summInputSys$intropenutup2<-NULL; summInputSys$introSistem<-NULL; summInputSys$introregulasi<-NULL; summInputSys$introintegrasi1<-NULL; 
-    summInputSys$introproses1<-NULL; summInputSys$introdatainfo1<-NULL;summInputSys$intropemantauan1<-NULL
-    summInputSys$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("summInputSys$alasan_00",i,"<-NULL")))
+    summInputSys$`meta/instanceID`<-NULL; summInputSys$`__version__`<-NULL; summInputSys$`_uuid`<-NULL; summInputSys$`_submission_time`<-NULL; summInputSys$`_tags`<-NULL; summInputSys$`_notes`<-NULL
+    
+    summInputSys$`regulasi/regulasi1/alasan`<-NULL
+    summInputSys$`regulasi/regulasi2/alasan_001`<-NULL
+    summInputSys$`integrasi1/integrasi2/alasan_002`<-NULL
+    summInputSys$`integrasi1/integrasi3/alasan_003`<-NULL
+    summInputSys$`integrasi1/integrasi4/alasan_004`<-NULL
+    summInputSys$`integrasi1/integrasi5/alasan_005`<-NULL
+    summInputSys$`integrasi1/integrasi6/alasan_006`<-NULL
+    summInputSys$`integrasi1/integrasi6/alasan_007`<-NULL
+    summInputSys$`proses1/proses2/alasan_008`<-NULL
+    summInputSys$`proses1/proses2_001/alasan_009`<-NULL
+    summInputSys$`proses1/proses3/alasan_010`<-NULL
+    summInputSys$`proses1/proses4/alasan_011`<-NULL
+    summInputSys$`proses1/proses4_001/alasan_012`<-NULL
+    
+    for (i in 13:31){
+      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo2/alasan_0",i,"`","<-NULL")))
     }
     
-    for (i in 10:68){
-      eval(parse(text=paste0("summInputSys$alasan_0",i,"<-NULL")))
+    for (i in 32:50){
+      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo3/alasan_0",i,"`","<-NULL")))
     }
+    
+    for (i in 51:52){
+      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 53:57){
+      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 58:63){
+      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 64:66){
+      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 67:68){
+      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
+    }
+    
     
     summInputSys<-as.data.frame(summInputSys)
+    summInputSys$`pemantauan1/pemantauan3/q9.2.6`[summInputSys$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
+    summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
+    summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
     summInputSys[is.na(summInputSys)]<-3
-    summSys<- as.data.frame(lapply(summInputSys[,3:length(summInputSys)], as.numeric))
+    summInputSys$year <- format(as.Date(summInputSys$`provinsi/tanggal`), format = "%Y")
+    summInputSys<-filter(summInputSys,summInputSys$year==input$selectedYear)
     
-    q2.5<-rowSums(summSys[,9:10]); q2.5<-as.data.frame(q2.5)/2
-    q7.1<-rowSums(summSys[,14:32]); q7.1<-as.data.frame(q7.1)/19
-    q7.2<-rowSums(summSys[,33:51]); q7.2<-as.data.frame(q7.2)/19
+    summSys<- as.data.frame(lapply(summInputSys[,3:(length(summInputSys)-1)], as.numeric))
+    
+    q2.5<-rowSums(summSys[,9:10]); q2.5<- as.data.frame(q2.5)/2
+    q7.1 <- rowSums(summSys[,14:32]); q7.1<- as.data.frame(q7.1)/19
+    q7.2 <- rowSums(summSys[,33:51]); q7.2<- as.data.frame(q7.2)/19
     q7.3<-rowSums(summSys[,52:53]); q7.3<-as.data.frame(q7.3)/2
     q9.1<-rowSums(summSys[,54:58]); q9.1<-as.data.frame(q9.1)/5
     q9.2<-rowSums(summSys[,59:64]); q9.2<-as.data.frame(q9.2)/6
     q9.3<-rowSums(summSys[,65:67]); q9.3<-as.data.frame(q9.3)/3
     q9.4<-rowSums(summSys[,68:69]); q9.4<-as.data.frame(q9.4)/2
     
-    summLevelSistem<-cbind(summInputSys$provinsi_001,summSys$q1.1,summSys$q1.2,summSys$q2.1,summSys$q2.2,summSys$q2.3, summSys$q2.4, q2.5,summSys$q3.1,summSys$q3.2,summSys$q3.3,summSys$q3.4,summSys$q3.5,q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
+    summLevelSistem<-cbind(summInputSys$`provinsi/provinsi_001`,summSys$regulasi.regulasi1.q1.1,summSys$regulasi.regulasi2.q1.2,summSys$integrasi1.integrasi2.q2.1,summSys$integrasi1.integrasi3.q2.2,summSys$integrasi1.integrasi4.q2.3, summSys$integrasi1.integrasi5.q2.4, q2.5, summSys$proses1.proses2.q3.1, summSys$proses1.proses2_001.q3.2, summSys$proses1.proses3.q3.3, summSys$proses1.proses4.q3.4, summSys$proses1.proses4_001.q3.5, q7.1, q7.2, q7.3, q9.1, q9.2, q9.3, q9.4)
     colnames(summLevelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
-    
-    # gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
-    # gap_3.1<-5-levelSistem$q3.1; gap_3.2<-5-levelSistem$q3.2; gap_3.3<-5-levelSistem$q3.3; gap_3.4<-5-levelSistem$q3.4; gap_3.5<-5-levelSistem$q3.5
-    # gap_7.1<-5-levelSistem$q7.1; gap_7.2<-5-levelSistem$q7.2; gap_7.3<-5-levelSistem$q7.3; gap_9.1<-5-levelSistem$q9.1; gap_9.2<-5-levelSistem$q9.2; gap_9.3<-5-levelSistem$q9.3
-    # valGAP<-cbind(gap_1.1,gap_1.2,gap_2.1,gap_2.2,gap_2.3,gap_2.4,gap_2.5,gap_3.1,gap_3.2,gap_3.3,gap_3.4,gap_3.5,gap_7.1,gap_7.2,gap_7.3,gap_9.1,gap_9.2,gap_9.3)
-    # val_Sistem<-cbind(levelSistem,valGAP)
     summTempSistem<-as.data.frame((summLevelSistem))
     
     indikatorSistem <- read.table("init/system.csv", header=TRUE, sep=",")
     summIndikatorSys <- as.data.frame(unique(indikatorSistem$Kapasitas_Fungsional))
     
-    #Menampilkan hasil satu provinsi
-    summTempSistem<-filter(summTempSistem,Provinsi==input$categoryProvince)
+    ## Menampilkan hasil satu provinsi untuk tingkat sistem ##
+    summTempSistem<-filter(summTempSistem,summInputSys$`provinsi/provinsi_001`==categoryProvince$provinsi)
     # summTempSistem<-filter(summTempSistem,Provinsi=="Aceh")
     
-    #Hasil per Aspek
-    Indikator_Penilaian<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
+    ## Membuat tabel Level setiap aspek ##   
+    aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
     LevelReg<-mean(as.matrix(summTempSistem[,2:3])); LevelInt<-mean(as.matrix(summTempSistem[4:8])); LevelProses<-mean(as.matrix(summTempSistem[9:13])); LevelData<-mean(as.matrix(summTempSistem[14:16])); LevelPEP<-mean(as.matrix(summTempSistem[17:20]))
     summ_allLevelSys<-as.data.frame(t(cbind(LevelReg,LevelInt, LevelProses, LevelData, LevelPEP)))
     #gapReg<-mean(as.matrix(tempSistem[21:22])); gapInt<-mean(as.matrix(tempSistem[23:27])); gapProses<-mean(as.matrix(tempSistem[28:32])); gapData<-mean(as.matrix(tempSistem[33:35])); gapPEP<-mean(as.matrix(tempSistem[36:39]))
     gapReg<-5-LevelReg; gapInt<-5-LevelInt; gapProses<-5-LevelProses; gapData<-5-LevelData; gapPEP<-5-LevelPEP
     summ_allGapSys<-as.data.frame(t(cbind(gapReg,gapInt,gapProses,gapData,gapPEP)))
-    summSistem<-as.data.frame(cbind(Indikator_Penilaian, summ_allLevelSys, summ_allGapSys))
+    summSistem<-as.data.frame(cbind(aspekSys, summ_allLevelSys, summ_allGapSys))
     colnames(summSistem)<-c("Aspek Penilaian","Level","GAP")
     
-    #Hasil per indikator & prioritas
-    t_summTempSistem <- t(summTempSistem[2:length(summTempSistem)])
-    provSys <- rowMeans(t_summTempSistem)
-    prioritasSys<-NULL
-    if (provSys[1]<=1) {
-      prioritasSys = "Prioritas sangat tinggi"
-    } else if (provSys[1]<=2) {
-      prioritasSys = "Prioritas tinggi"
-    } else if (provSys[1]<=3) {
-      prioritasSys = "Prioritas rendah"
-    } else {
-      prioritasSys = "Tidak prioritas"
-    }
-    tabelSys<-cbind(summIndikatorSys,provSys, prioritasSys)
+    ## Menampilkan level per indikator & prioritas ##
+    t_summTempSistem<-t(summTempSistem[2:length(summTempSistem)])
+    provSys<-rowMeans(t_summTempSistem)
+    provSys<-round(provSys, digits = 2)
+    
+    tabelSys<-cbind(summIndikatorSys,provSys)
+    tabelSys$prioritasSys <- "Tidak prioritas" 
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=3, "Prioritas rendah", prioritasSys)})
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=2, "Prioritas tinggi", prioritasSys)})
+    tabelSys<-within(tabelSys, {prioritasSys<-ifelse(provSys<=1, "Prioritas sangat tinggi", prioritasSys)})
+    
     colnames(tabelSys)<-c("Indikator","Level","Prioritas")
     
-    ##Organisasi
-    # summInputOrg<-readRDS("data/fileOrg")
+    #### Tabel Prioritas Tingkat Organisasi ####
+    summInputOrg<-readRDS("data/dataOrganisasi")
+
+    summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
+    summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
     
-    summInputOrg$intro00<-NULL; summInputOrg$intro0a2<-NULL; summInputOrg$logo0<-NULL; summInputOrg$logo<-NULL; summInputOrg$intro0<-NULL; summInputOrg$intro0a<-NULL
-    summInputOrg$url_widget2<-NULL; summInputOrg$intro1a<-NULL; summInputOrg$jabatan<-NULL
-    #summInputOrg$nama<-NULL; summInputOrg$institusi<-NULL; summInputOrg$tanggal<-NULL; 
-    summInputOrg$introOrganisasi<-NULL; summInputOrg$introperangkat1<-NULL; summInputOrg$introsdm1<-NULL; summInputOrg$introteknologi1<-NULL
-    summInputOrg$X_index<-NULL; summInputOrg$X_validation_status<-NULL; summInputOrg$X_submission_time<-NULL; summInputOrg$X_uuid<-NULL; summInputOrg$X_id<-NULL; summInputOrg$intropenutup1<-NULL; summInputOrg$intropenutup<-NULL
-    summInputOrg$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("summInputOrg$alasan_00",i,"<-NULL")))
+    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
+    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
+    
+    for (i in 2:4){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
     }
     
-    for (i in 10:44){
-      eval(parse(text=paste0("summInputOrg$alasan_0",i,"<-NULL")))
+    for (i in 5:6){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
+    }
+    for (i in 7:9){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
+    }
+    summInputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
+    
+    for (i in 11:13){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
     }
     
+    for (i in 14:15){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 16:22){
+      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 23:29){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    summInputOrg$`sdm1/sdm3/alasan_030`<-NULL
+    summInputOrg$`sdm1/sdm4/alasan_031`<-NULL
+    
+    for (i in 32:33){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 34:35){
+      eval(parse(text=paste0("summInputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 36:39){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 40:42){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
+    }
+    
+    for (i in 43:44){
+      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
+    }
+    
+    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
+    summInputOrg[summInputOrg == "n/a"]  <- NA
+    summInputOrg <- na.omit(summInputOrg)
+    summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     summInputOrg<-as.data.frame(summInputOrg)
+    
     summOrg<- as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
     
     q4.1<-rowSums(summOrg[,1:2]); q4.1<- as.data.frame(q4.1)/2
@@ -385,24 +976,25 @@ server <- function(input, output, session) {
     q4.6<-rowSums(summOrg[,15:16]); q4.6<- as.data.frame(q4.6)/2
     q4.7<-rowSums(summOrg[,17:23]); q4.7<- as.data.frame(q4.7)/7
     q5.1<-rowSums(summOrg[,24:30]); q5.1<- as.data.frame(q5.1)/7
-    q5.2<-summOrg$q5.2; q5.3<-summOrg$q5.3
+    q5.2<-summOrg$sdm1.sdm3.q5.2; q5.3<-summOrg$sdm1.sdm4.q5.3
     q5.4<-rowSums(summOrg[,33:34]); q5.4<- as.data.frame(q5.4)/2
     q5.5<-rowSums(summOrg[,35:36]); q5.5<- as.data.frame(q5.5)/2
     q8.1<-rowSums(summOrg[,37:40]); q8.1<- as.data.frame(q8.1)/4
     q8.2<-rowSums(summOrg[,41:43]); q8.2<- as.data.frame(q8.2)/3
     q8.3<-rowSums(summOrg[,44:45]); q8.3<- as.data.frame(q8.3)/2
-    valOrganisasi <- cbind(summInputOrg$provinsi,summInputOrg$institusi,summInputOrg$nama,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    valOrganisasi <- cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
+    colnames(valOrganisasi)<-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
     summTempOrganisasi<-as.data.frame(valOrganisasi)
     
     indikatorOrg <- read.table("init/organisation.csv", header=TRUE, sep=",")
     summIndikatorOrg <- as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
     colnames(summIndikatorOrg)<-"Indikator"
     
-    #Menampilkan hasil satu provinsi
-    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$provinsi==input$categoryProvince)
-    # summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$provinsi=="Aceh")
+    ##Menampilkan hasil satu provinsi untuk tingkat organisasi##
+    summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
+    # summTempOrganisasi<-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
     
-    #Hasil per aspek
+    ##Membuat tabel Level setiap aspek##   
     Level4<-rowSums(summTempOrganisasi[,4:10])/length(summTempOrganisasi[,4:10])
     LevelOrg<-mean(Level4)
     Level5 <- rowSums(summTempOrganisasi[,11:15])/length(summTempOrganisasi[,11:15])
@@ -415,108 +1007,188 @@ server <- function(input, output, session) {
     summOrganisasi<-as.data.frame(cbind(Aspek_Penilaian, LevelOrg_gabungan, gapOrg_gabungan))
     colnames(summOrganisasi)<- c("Aspek Penilaian", "Level", "GAP")
     
-    #Hasil per indikator dan prioritas
+    ## Menampilkan level per indikator & prioritas ##
     Ind4.1<-mean(summTempOrganisasi$q4.1); Ind4.2<-mean(summTempOrganisasi$q4.2); Ind4.3<-mean(summTempOrganisasi$q4.3); Ind4.4<-mean(summTempOrganisasi$q4.4); Ind4.5<-mean(summTempOrganisasi$q4.5); Ind4.6<-mean(summTempOrganisasi$q4.6); Ind4.7<-mean(summTempOrganisasi$q4.7)
     Ind5.1<-mean(summTempOrganisasi$q5.1); Ind5.2<-mean(summTempOrganisasi$q5.2); Ind5.3<-mean(summTempOrganisasi$q5.3); Ind5.4<-mean(summTempOrganisasi$q5.4); Ind5.5<-mean(summTempOrganisasi$q5.5)
     Ind8.1<-mean(summTempOrganisasi$q8.1);Ind8.2<-mean(summTempOrganisasi$q8.2);Ind8.3<-mean(summTempOrganisasi$q8.3)
-    provOrg <- as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
-    prioritasOrg<-NULL
-    if (provOrg[1]<=1) {
-      prioritasOrg = "Prioritas sangat tinggi"
-    } else if (provOrg[1]<=2) {
-      prioritasOrg = "Prioritas tinggi"
-    } else if (provOrg[1]<=3) {
-      prioritasOrg = "Prioritas rendah"
-    } else {
-      prioritasOrg = "Tidak prioritas"
-    }
-    tabelOrg<-cbind(summIndikatorOrg,provOrg,prioritasOrg)
+    provOrg<-as.data.frame(t(cbind(Ind4.1,Ind4.2,Ind4.3,Ind4.4,Ind4.5,Ind4.6,Ind4.7,Ind5.1,Ind5.2,Ind5.3,Ind5.4,Ind5.5,Ind8.1,Ind8.2,Ind8.3)))
+    provOrg<-round(provOrg,digits = 2)
+    
+    tabelOrg<-cbind(summIndikatorOrg,provOrg)
+    tabelOrg$prioritasOrg<-"Tidak prioritas" 
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=3, "Prioritas rendah", prioritasOrg)})
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=2, "Prioritas tinggi", prioritasOrg)})
+    tabelOrg<-within(tabelOrg, {prioritasOrg<-ifelse(provOrg<=1, "Prioritas sangat tinggi", prioritasOrg)})
+    
     colnames(tabelOrg)<-c("Indikator","Level","Prioritas")
-   
     
-    ##Individu
-    # summInputInd<-readRDS("data/fileInd")
+    ### Tabel Prioritas Tingkat Individu ####
+    summInputInd<-readRDS("data/dataIndividu")
     
-    summInputInd$intro00<-NULL; summInputInd$intro0a2<-NULL; summInputInd$logo0<-NULL; summInputInd$logo<-NULL; summInputInd$intro0<-NULL; summInputInd$intro0a<-NULL; summInputInd$intro1a<-NULL
-    summInputInd$gender<-NULL; summInputInd$jabatan<-NULL; summInputInd$akun <- NULL; #summInputInd$tanggal<-NULL
-    summInputInd$introIndividu<-NULL; summInputInd$introSDM2<-NULL; summInputInd$X_index<-NULL; summInputInd$X_validation_status<-NULL
-    summInputInd$X_submission_time<-NULL; summInputInd$X_uuid<-NULL; summInputInd$X_id<-NULL; summInputInd$intropenutup<-NULL
-    summInputInd$alasan<-NULL
-    for (i in 1:9){
-      eval(parse(text=paste0("summInputInd$alasan_00",i,"<-NULL")))
+    summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
+    summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
+    
+    summInputInd$`sdm_i1/sdm_i2/alasan`<-NULL
+    summInputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
+    
+    for (i in 2:9){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+    }
+    summInputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
+    
+    for (i in 11:19){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
     }
     
-    for (i in 10:22){
-      eval(parse(text=paste0("summInputInd$alasan_0",i,"<-NULL")))
+    for (i in 20:22){
+      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
     }
     
-    summInputInd<-as.data.frame(summInputInd)
-    summInputInd<-na.omit(summInputInd)
-    summInd<- as.data.frame(lapply(summInputInd[,7:length(summInputInd)], as.numeric))
+    ## Menghilangkan n/a pada data frame ##
+    summInputInd[summInputInd == "n/a"]  <- NA
+    summInputInd <- na.omit(summInputInd)
+    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    
+    summInd<- as.data.frame(lapply(summInputInd[,5:length(summInputInd)], as.numeric))
     
     q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
     q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
     q6.3<-rowSums(summInd[,12:20]); q6.3<-as.data.frame(q6.3)/9
     q6.4<-rowSums(summInd[,21:23]); q6.4<-as.data.frame(q6.4)/3
-    valInd<-cbind(summInputInd$provinsi,q6.1,q6.2,q6.3,q6.4)
+    valInd<-cbind(summInputInd$`profil/provinsi`,summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
+    colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
     summTempIndividu<-as.data.frame(valInd)
     
     summIndikatorInd <- c("6.1. Kesesuaian Peran dalam Implementasi RAD GRK/PPRKD dengan Tugas dan Fungsi","6.2. Pengetahuan","6.3. Keterampilan","6.4. Pengembangan dan Motivasi")
     summIndikatorInd  <- as.data.frame(summIndikatorInd)
     
-    summTempIndividu<-filter(summTempIndividu,summInputInd$provinsi==input$categoryProvince)
-    # summTempIndividu<-filter(summTempIndividu,summInputInd$provinsi=="Aceh")
+    summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`==categoryProvince$provinsi)
+    # summTempIndividu<-filter(summTempIndividu,summInputInd$`profil/provinsi`=="Aceh")
     
-    #Hasil per Aspek
+    ## Membuat tabel Level setiap aspek ##
     Indikator_Penilaian_Ind<-"6. Sumber Daya Manusia - Individu"
-    Level6<-mean(as.matrix(summTempIndividu[2:length(summTempIndividu)]))
+    Level6<-mean(as.matrix(summTempIndividu[3:length(summTempIndividu)]))
     gap6<-5-Level6
     summIndividu<-as.data.frame(cbind(Indikator_Penilaian_Ind, Level6, gap6))
     colnames(summIndividu)<-c("Aspek Penilaian","Level","GAP")
     
-    #Hasil per indikator dan prioritas
-    Ind6.1<-mean(valInd$q6.1); Ind6.2<-mean(valInd$q6.2); Ind6.3<-mean(valInd$q6.3); Ind6.4<-mean(valInd$q6.4)
-    provInd <- as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
-    prioritasInd <- NULL
-    if (provInd[1]<=1) {
-      prioritasInd = "Prioritas sangat tinggi"
-    } else if (provInd[1]<=2) {
-      prioritasInd = "Prioritas tinggi"
-    } else if (provInd[1]<=3) {
-      prioritasInd = "Prioritas rendah"
-    } else {
-      prioritasInd = "Tidak prioritas"
-    }
-    tabelInd<-cbind(summIndikatorInd,provInd,prioritasInd)
+    ## Menampilkan level per indikator & prioritas ##
+    Ind6.1<-mean(summTempIndividu$q6.1); Ind6.2<-mean(summTempIndividu$q6.2); Ind6.3<-mean(summTempIndividu$q6.3); Ind6.4<-mean(summTempIndividu$q6.4)
+    provInd<-as.data.frame(t(cbind(Ind6.1,Ind6.2,Ind6.3,Ind6.4)))
+    provInd<-round(provInd, digits=2)
+    
+    tabelInd<-cbind(summIndikatorInd,provInd)
+    tabelInd$prioritasInd <- "Tidak prioritas" 
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=3, "Prioritas rendah", prioritasInd)})
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=2, "Prioritas tinggi", prioritasInd)})
+    tabelInd<-within(tabelInd, {prioritasInd<-ifelse(provInd<=1, "Prioritas sangat tinggi", prioritasInd)})
+    
     colnames(tabelInd)<-c("Indikator","Level","Prioritas")
     
-    ##Tabel Prioritas
+    ### Tabel Prioritas Gabungan ####
     allprioritas <- rbind(tabelSys,tabelOrg,tabelInd)
     prioritas <- allprioritas[order(allprioritas$Level),]
     
-    ##Gabungan
+    ### Tabel Level Per Aspek Semua Tingkat ###
     summary<-as.data.frame(rbind(summSistem, summOrganisasi, summIndividu))
     summary$`Aspek Penilaian`<-NULL
-    aspek<-c("Regulasi/peraturan daerah","Integrasi dalam Perencanaan Pembangunan Daerah", "Proses", "Data dan Informasi", "Pemantauan, Evaluasi, dan Pelaporan","Organisasi","Sumber Daya Manusia - Organisasi", "Teknologi", "Sumber Daya Manusia - Individu")
+    aspek<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan","4. Organisasi","5. Sumber Daya Manusia - Organisasi", "8. Teknologi", "6. Sumber Daya Manusia - Individu")
     summary<-cbind(aspek,summary)
-    finalGAP<-as.data.frame(5-as.numeric(summary$Level))
-    summary$Level<-as.numeric(summary$Level)
-    summary<-as.data.frame(cbind(summary,finalGAP))
-    summary$GAP<-NULL
-    colnames(summary)<-c("Aspek Penilaian", "Level", "GAP")
+    finalLevel<-as.numeric(summary$Level)
+    finalLevel<-round(finalLevel,digits = 2)
+    finalGAP<-as.data.frame(5-finalLevel)
+    finalGAP<-round(finalGAP, digits = 2)
+    # summary$Level<-as.numeric(summary$Level)
+    summary<-as.data.frame(cbind(summary$aspek,finalLevel, finalGAP))
+    # summary$GAP<-NULL
+    colnames(summary)<-c("Aspek", "Level", "GAP")
     rownames(summary)<-1:9
     tablesCDA$allSummary <- summary
+    # tablesCDA$priorityTable <- prioritas
     
-    prioritas
+    initial_indikator <- substring(prioritas$Indikator,1, 3)
+    tabel <- data.frame(cbind(initial_indikator, prioritas$Level, prioritas$Prioritas))
+    colnames(tabel)<-c("Indikator", "Level", "Prioritas")
+    tabel$Level <- as.numeric(levels(tabel$Level))[tabel$Level]
+    tabel$Rekomendasi <- "Tidak ada rekomendasi"
+    
+    ###Define the recommendation of each indicator####
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.1" & Level<=3 , "Penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="1.2" & Level<=3 , "Sosialisasi Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD dan Pembuatan petunjuk operasional dalam regulasi yang mengatur PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.1" & Level<=3 , "Pengarusutamaan konsep pembangunan rendah karbon dalam visi misi daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.2" & Level<=3 , "Pengarusutamaan isu strategis pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.3" & Level<=3 , "Pengarusutamaan prioritas pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.4" & Level<=3 , "Pengarusutamaan indikator pembangunan rendah karbon dalam perencanaan pembangunan daerah ", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="2.5" & Level<=3 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.1" & Level<=3 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.2" & Level<=3 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.3" & Level<=3 , "Penyelesaian Kaji Ulang RAD GRK dalam rangka penyusunan Peraturan Gubernur tentang Kaji Ulang RAD GRK/PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.4" & Level<=3 , "Tanpa rekomendasi", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="3.5" & Level<=3 , "Pengarusutamaan program pembangunan rendah karbon/aksi mitigasi sebagai program/kegiatan pembangunan daerah yang tertuang dalam RPJMD serta Renstra K/L", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.1" & Level<=3 , "Revitalisasi organisasi kelompok kerja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.2" & Level<=3 , "Adaptasi struktur organisasi yang disesuaikan dengan kebutuhan implementasi pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.3" & Level<=3 , "Penyusunan mekanisme pengambilan keputusan yang inklusif dan berbasiskan data yang shahih", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.4" & Level<=3 , "Penyusunan prosedur/proses kerja serta pengelolaan kelembagaan yang mencakup seluruh aktivitas Pokja", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.5" & Level<=3 , "Fasilitasi penyediaan anggaran bagi operasional Pokja termasuk proses penganggaran di dalam APBD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.6" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="4.7" & Level<=3 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.1" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.2" & Level<=3 , "Penguatan kapasitas anggota Pokja dalam proses pengarusutamaan PPRKD ke dalam perencanaan pembangunan daerah", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.3" & Level<=3 , "Penguatan kapasitas anggota Pokja dalam proses penulisan/pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.4" & Level<=3 , "Penyusunan mekanisme kerja sama antara Pokja dengan pihak eksternal", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="5.5" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.1" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.2" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.3" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="6.4" & Level<=3 , "Fasilitasi terbentuknya harmonisasi kerja dalam Pokja PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.1" & Level<=3 , "Penyediaan data yang berkualitas dalam pelaksanaan PPRKD", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.2" & Level<=3 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="7.3" & Level<=3 , "Pengelolaan data  yang berkualitas dalam pelaksanaan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.1" & Level<=3 , "Peningkatan penggunaan perangkat lunak dalam pengelolaan data dan analisis teknis dalam rangka perencanaan dan pemantauan, evaluasi, serta pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.2" & Level<=3 , "Pengadaan perangkat keras penunjang aktivitas perencanaan, pemantauan, evaluasi, dan pelaporan pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="8.3" & Level<=3 , "Penyediaan kapasitas jaringan yang mendukung proses perencanaan, pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.1" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.2" & Level<=3 , "Peningkatan kapasitas teknis anggota Pokja dalam penyusunan PPRKD serta pemantauan, evaluasi, dan pelaporan", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.3" & Level<=3 , "Penyusunan prosedur pelibatan berbagai pihak termasuk kabupaten/kota dan swasta dalam proses pemantauan, evaluasi, dan pelaporan program pembangunan rendah karbon", Rekomendasi)})
+    tabel <- within(tabel, {Rekomendasi<-ifelse(Indikator=="9.4" & Level<=3 , "Penyusunan prosedur pemanfaatan data pemantauan, evaluasi, dan pelaporan bagi kepentingan berbagai pihak", Rekomendasi)})
+    
+    tabel$Indikator <- prioritas$Indikator
+    tablesCDA$priorityTable <- tabel
+    
+    datatable(tabel,escape = FALSE, rownames = FALSE)
+    
   })
+      ## Bar Chart Semua Tingkat ##
+    output$resChartSumm <- renderPlotly({
+      summary<-tablesCDA$allSummary
+      plot_ly(summary, x=~Aspek, y=~Level, type='bar', name='Level') %>%
+        add_trace(y=~GAP, name='GAP') %>%
+        layout(
+          yaxis = list(title='Nilai'),
+          xaxis = list(title='Aspek Penilaian'),
+          barmode='stack')
+    })
+      ## ggplot untuk unduh hasil anlisis ##
+    output$resChartSumm2 <- renderPlotly({
+      nilai1 <- t(summary$Level)
+      nilai2 <- t(summary$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(summary$Level)))
+      jenis2 <- t(rep("Gap", length(summary$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(summary$Indikator)
+      dataGraphSumm <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphSumm) <- c("jenis", "nilai", "indikator")
+      
+      dataGraphSumm <- ddply(dataGraphSumm, .(indikator),
+                             transform, pos = cumsum(nilai)-nilai)
+      chartSumm<-ggplot() + geom_bar(data=dataGraphSumm, aes(x=indikator, y=nilai, fill=jenis), stat="identity") + 
+        geom_text(data=dataGraphSumm, aes(x =indikator, y =nilai, label =paste0(nilai)), size=4)
+      
+      final_chart$chartSummary<-chartSumm
+    })
   
-  output$resChartSumm <- renderPlotly({
-    ###BAR CHART Summary
-    summary<-tablesCDA$allSummary
-    plot_ly(summary, x=~`Aspek Penilaian`, y=~Level, type='bar', name='Level') %>%
-      add_trace(y=~GAP, name='GAP') %>%
-      layout(yaxis = list(title='Nilai'), barmode='stack', title="Level dan Gap Penilaian Kapasitas Provinsi")
-  })
   
   # output$koboMap <- renderLeaflet({
   #   long_lat_data<-read_excel("data/CDNA_SistemOrganisasi.xlsx")
@@ -537,8 +1209,119 @@ server <- function(input, output, session) {
   # observeEvent(input$exportInd, {
   #   saveData(tablesCDA$tableIndividu)
   # })
-
   
+  output$downloadResults <- downloadHandler(
+    filename = paste0(categoryProvince$provinsi, "_hasil.doc"),
+    content = function(file){
+      graphSistem<-tablesCDA$summarySystem
+      provOrg<-tablesCDA$summaryProvOrg
+      provInd<-tablesCDA$summaryProvInd
+      tabel<-tablesCDA$priorityTable
+      summary<-tablesCDA$allSummary
+      
+  ## ggplot unduhan hasil analisis ####
+      ## individu ###
+      nilai1 <- t(provInd$Level)
+      nilai2 <- t(provInd$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(provInd$Level)))
+      jenis2 <- t(rep("Gap", length(provInd$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(provInd$Indikator)
+      dataGraphInd <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphInd) <- c("jenis", "nilai", "indikator")
+      chartInd<-ggplot(data=dataGraphInd, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphInd, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      ## organisasi ###
+      nilai1 <- t(provOrg$Level)
+      nilai2 <- t(provOrg$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(provOrg$Level)))
+      jenis2 <- t(rep("Gap", length(provOrg$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(provOrg$Indikator)
+      dataGraphOrg <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphOrg) <- c("jenis", "nilai", "indikator")
+      chartOrg<-ggplot(data=dataGraphOrg, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphOrg, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      ## sistem ###
+      nilai1 <- t(graphSistem$Level)
+      nilai2 <- t(graphSistem$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(graphSistem$Level)))
+      jenis2 <- t(rep("Gap", length(graphSistem$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      indikator <- data.frame(graphSistem$Indikator)
+      dataGraphSys <- data.frame(cbind(jenis,nilai,indikator))
+      colnames(dataGraphSys) <- c("jenis", "nilai", "indikator")
+      chartSys<-ggplot(data=dataGraphSys, aes(x=indikator, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Indikator") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphSys, aes(x =indikator, y =nilai, label =paste0(nilai)), size=2)
+      
+      ## rangkuman ###
+      nilai1 <- t(summary$Level)
+      nilai2 <- t(summary$GAP)
+      nilai <- t(cbind(nilai1,nilai2))
+      jenis1 <- t(rep("Level", length(summary$Level)))
+      jenis2 <- t(rep("Gap", length(summary$GAP)))
+      jenis <- t(cbind(jenis1,jenis2))
+      aspek <- data.frame(summary$Aspek)
+      dataGraphSumm <- data.frame(cbind(jenis,nilai,aspek))
+      colnames(dataGraphSumm) <- c("jenis", "nilai", "aspek")
+      chartSumm<-ggplot(data=dataGraphSumm, aes(x=aspek, y=nilai, fill=jenis)) +
+        geom_bar(stat="identity") +
+        coord_flip() + guides(fill=guide_legend()) + xlab("Aspek") + ylab("Nilai") +
+        theme(legend.position="bottom", legend.direction="horizontal",
+              legend.title = element_blank()) +
+        geom_text(data=dataGraphSumm, aes(x =aspek, y =nilai, label =paste0(nilai)), size=2)
+      
+  ## Isi unduhan hasil analisis ####
+      title <- "\\b\\fs32 Hasil Analisis Penilaian Kapasistas Mandiri\\b0\\fs20"
+      fileresult = file.path(tempdir(), paste0(categoryProvince$provinsi, "_hasil.doc"))
+      rtffile <- RTF(fileresult, font.size = 9)
+      addParagraph(rtffile, title)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Tabel 1 Aspek Penilaian Tingkat Sistem per Provinsi\\b0\\fs14")
+      addTable(rtffile, graphSistem, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 1 Indikator Penilaian Tingkat Sistem per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSys)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Tabel 2 Aspek Penilaian Tingkat Organiasi per Provinsi\\b0\\fs14")
+      addTable(rtffile, provOrg, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 2 Indikator Penilaian Tingkat Organiasi per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartOrg)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Tabel 3 Aspek Penilaian Tingkat Individu per Provinsi\\b0\\fs14")
+      addTable(rtffile, provInd, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 3 Indikator Penilaian Tingkat Individu per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartInd)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Tabel 4 Rangkuman Hasil dan Tingkat Prioritas per Provinsi\\b0\\fs14")
+      addTable(rtffile, tabel, font.size = 8)
+      addNewLine(rtffile)
+      addParagraph(rtffile, "\\b\\fs14 Grafik 4 Grafik 9 Aspek Penilaian per Provinsi\\b0\\fs14")
+      addPlot(rtffile, plot.fun = print, width = 7, height = 3, res = 100, chartSumm)
+      done(rtffile)
+      
+      file.copy(fileresult, file)
+    }
+  )
 }
 
 ###*run the apps#### 
