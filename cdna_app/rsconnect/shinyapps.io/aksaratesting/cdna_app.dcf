@@ -1,0 +1,12 @@
+name: cdna_app
+title: cdna_app
+username:
+account: aksaratesting
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3493616
+bundleId: 4119825
+url: https://aksaratesting.shinyapps.io/cdna_app/
+when: 1611115710.25489
+asMultiple: FALSE
+asStatic: FALSE
