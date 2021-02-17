@@ -1,0 +1,13 @@
+name: cdna
+title: cdna
+username:
+account: aksaratesting
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3639463
+bundleId: 4225916
+url: https://aksaratesting.shinyapps.io/cdna/
+when: 1613405624.35094
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: app_nasional.R|counter.Rdata
