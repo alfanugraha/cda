@@ -1,0 +1,12 @@
+name: cdna_elearning
+title: cdna_elearning
+username:
+account: aksaratesting
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 3652463
+bundleId: 4238414
+url: https://aksaratesting.shinyapps.io/cdna_elearning/
+when: 1613615009.10397
+asMultiple: FALSE
+asStatic: FALSE
