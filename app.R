@@ -37,6 +37,8 @@ saveRDS(dataMoodle, "data/dataMoodle")
 # Define UI
 ui <- fluidPage(
   
+  HTML('<meta name="viewport" content="width=1024">'),
+  
   #Navbar structure for UI
   navbarPage("", theme = shinytheme("lumen"),
              tabPanel("E-learning AKSARA", fluid = TRUE, icon = icon("globe"),
