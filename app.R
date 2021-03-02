@@ -60,6 +60,8 @@ saveRDS(dataIndividu, "data/dataIndividu")
 # Define UI
 ui <- fluidPage(
 
+  HTML('<meta name="viewport" content="width=device-width">'),
+  
 #Navbar structure for UI
   navbarPage("", theme = shinytheme("lumen"),
              # tabPanel("Sistem", fluid = TRUE, icon = icon("user-cog"),
@@ -289,7 +291,10 @@ server <- function(input, output, session) {
     graphSistem <- tablesCDA$summarySystem
     plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
-      layout(yaxis=list(title='Indikator'), barmode='stack')
+      layout(yaxis=list(title=''), xaxis = list(title = ''), barmode='stack')  %>% 
+      layout(xaxis = list(titlefont = list(size = 12), tickfont = list(size = 12)),
+              yaxis = list(titlefont = list(size = 10)) ) %>% 
+      layout(legend = list(orientation = 'h'))
   })
 
   ## ggplot untuk unduh hasil anlisis ##

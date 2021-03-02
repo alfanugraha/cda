@@ -57,7 +57,10 @@ saveRDS(dataIndividu, "data/dataIndividu")
 
 # Define UI
 ui <- fluidPage(
-
+  
+  HTML('<meta name="viewport" content="width=device-width">'),
+  # tags$head( tags$meta(name = "viewport", content = "width=1600")
+  
   #Navbar structure for UI
   navbarPage("", theme = shinytheme("lumen"),
              tabPanel("Nasional", fluid = TRUE, icon = icon("globe"),
@@ -360,9 +363,23 @@ server <- function(input, output, session) {
       theme_minimal() +
       theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
             axis.text.x = element_blank(),
+            axis.text.y = element_text(size = 7),
             axis.title.x = element_blank(),
-            axis.title.y=element_blank())
-    ggplotly(graph)
+            axis.title.y=element_blank(),
+            legend.text = element_text(size = 8))
+    ggplotly(graph) %>% layout(legend = list(orientation = "h", x = 0, y = -0.3))
+
+    # graph <- ggplot(chartNasional, aes(fill=Aspek, x=reorder(Provinsi, -Level), y=Level, text = paste("Provinsi:", Provinsi))) +
+    #   geom_bar(position="stack", stat="identity") +
+    #   coord_flip() +
+    #   theme_minimal() +
+    #   theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
+    #         axis.text.x = element_blank(),
+    #         axis.text.y = element_text(size = 6),
+    #         axis.title.x = element_blank(),
+    #         axis.title.y=element_blank(),
+    #         legend.text = element_text(size = 8))
+    # ggplotly(graph, tooltip=c("text", "Level", "Aspek")) %>% layout(legend = list(orientation = "h", x = 0, y = -0.3))
 
   })
 }
