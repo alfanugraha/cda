@@ -179,7 +179,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelEnergi)){
-        eval(parse(text=paste0("tabelEnergi <- within(tabelEnergi, {Rekomendasi<-ifelse(ID=='", as.character(tabelEnergi$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelEnergi <- within(tabelEnergi, {Rekomendasi<-ifelse(ID=='", as.character(tabelEnergi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelEnergi$ID <- NULL
@@ -198,7 +198,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelTransportasi)){
-        eval(parse(text=paste0("tabelTransportasi <- within(tabelTransportasi, {Rekomendasi<-ifelse(ID=='", as.character(tabelTransportasi$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelTransportasi <- within(tabelTransportasi, {Rekomendasi<-ifelse(ID=='", as.character(tabelTransportasi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelTransportasi$ID <- NULL
@@ -217,7 +217,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelHutan)){
-        eval(parse(text=paste0("tabelHutan <- within(tabelHutan, {Rekomendasi<-ifelse(ID=='", as.character(tabelHutan$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelHutan <- within(tabelHutan, {Rekomendasi<-ifelse(ID=='", as.character(tabelHutan$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelHutan$ID <- NULL
@@ -236,7 +236,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelTani)){
-        eval(parse(text=paste0("tabelTani <- within(tabelTani, {Rekomendasi<-ifelse(ID=='", as.character(tabelTani$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelTani <- within(tabelTani, {Rekomendasi<-ifelse(ID=='", as.character(tabelTani$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelTani$ID <- NULL
@@ -255,7 +255,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelLimbah)){
-        eval(parse(text=paste0("tabelLimbah <- within(tabelLimbah, {Rekomendasi<-ifelse(ID=='", as.character(tabelLimbah$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelLimbah <- within(tabelLimbah, {Rekomendasi<-ifelse(ID=='", as.character(tabelLimbah$ID[i]) , "' & Nilai<3, 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelLimbah$ID <- NULL
@@ -274,7 +274,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelAdmin)){
-        eval(parse(text=paste0("tabelAdmin <- within(tabelAdmin, {Rekomendasi<-ifelse(ID=='", as.character(tabelAdmin$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelAdmin <- within(tabelAdmin, {Rekomendasi<-ifelse(ID=='", as.character(tabelAdmin$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelAdmin$ID <- NULL
@@ -293,7 +293,7 @@ server <- function(input, output, session) {
       
       ###Define the recommendation of each indicator####
       for (i in 1:nrow(tabelEditor)){
-        eval(parse(text=paste0("tabelEditor <- within(tabelEditor, {Rekomendasi<-ifelse(ID=='", as.character(tabelEditor$ID[i]) , "' & Nilai<4 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        eval(parse(text=paste0("tabelEditor <- within(tabelEditor, {Rekomendasi<-ifelse(ID=='", as.character(tabelEditor$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
       }
       
       tabelEditor$ID <- NULL
