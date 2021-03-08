@@ -1,3 +1,4 @@
+# library ####
 library(dplyr)
 library(ggplot2)
 library(shiny)
@@ -17,6 +18,7 @@ library(rtf)
 library(stringr)
 library(gtools)
 
+# initiate variable ####
 button_color_css <- "
 #DivCompClear, #FinderClear, #EnterTimes{
 /* Change the background color of the update button
@@ -161,8 +163,16 @@ server <- function(input, output, session) {
   multiyearsTable <- reactiveValues(multiIndividu=data.frame(),multiOrganisasi=data.frame() ,multiSistem=data.frame())
 
   categoryProvince <- reactiveValues(provinsi=NULL)
-  #Data provinsi masih statis
-  categoryProvince$provinsi <- "Bali" #isinya variable yang akan diterima dari API AKSARA
+  
+  # dynamic value, parse aGET query string from a URL
+  observe({
+    query <- parseQueryString(session$clientData$url_search)
+    if(!is.null(query$provinsi)){
+      categoryProvince$provinsi <- query$provinsi
+    } else {
+      categoryProvince$provinsi <- "Bali" #default province
+    }
+  })
 
   output$titleSistem <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Sistem Provinsi ", categoryProvince$provinsi) })
   output$titleOrganisasi <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Organisasi Provinsi ", categoryProvince$provinsi) })
