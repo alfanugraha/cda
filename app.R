@@ -41,17 +41,17 @@ form_org <- 327585 #Organisasi
 form_ind <- 327418 #Individu
 
 ## Sistem ##
-url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,".csv")
+url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,"?format=csv")
 rawdata_sis  <- GET(url_sis,authenticate("cdna2019","Icraf2019!"),progress())
 dataSistem  <- read_csv(content(rawdata_sis,"raw",encoding = "UTF-8"))
 
 ## Organisasi ##
-url_org <- paste0(kc_server_url,"api/v1/data/",form_org,".csv")
+url_org <- paste0(kc_server_url,"api/v1/data/",form_org,"?format=csv")
 rawdata_org <- GET(url_org,authenticate("cdna2019","Icraf2019!"),progress())
 dataOrganisasi <- read_csv(content(rawdata_org,"raw",encoding = "UTF-8"))
 
 ## Individu ##
-url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,".csv")
+url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,"?format=csv")
 rawdata_ind <- GET(url_ind,authenticate("cdna2019","Icraf2019!"),progress())
 dataIndividu <- read_csv(content(rawdata_ind,"raw",encoding = "UTF-8"))
 
