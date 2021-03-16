@@ -105,13 +105,13 @@ valOrganisasi <-cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/insti
 colnames(valOrganisasi) <-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
 summTempOrganisasi <-as.data.frame(cbind(valOrganisasi,year))
 
-indikatorOrg <-read.table("init/organisation.csv", header=TRUE, sep=",")
-summIndikatorOrg <-as.data.frame(unique(indikatorOrg$Kapasitas_Fungsional))
+indikatorOrg <-read.table("init/organisasi.csv", header=TRUE, sep=";")
+summIndikatorOrg <-as.data.frame(indikatorOrg$Perbaikan)
 colnames(summIndikatorOrg) <-"Indikator"
 
 ## Menampilkan hasil satu provinsi untuk tingkat organisasi ##
 summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
-summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
+# summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
 
 ## Membuat tabel Level setiap aspek ##
 Level4 <-rowSums(summTempOrganisasi[,4:10])/length(summTempOrganisasi[,4:10])
