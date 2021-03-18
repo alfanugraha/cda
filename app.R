@@ -82,6 +82,8 @@ server <- function(input, output, session) {
       eval(parse(text=paste0("tempData$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
     }
     
+    tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+    
     tempData[tempData == "n/a"]  <- NA
     tempData <- as.data.frame(tempData)
     tempData$nama <- c("Admin 1", "Kontributor 1", "Kontributor 2", "Kontributor 3","Umum 1","Kontributor 4", "Umum 2", "Umum 3", "Kontributor 5")
@@ -99,10 +101,10 @@ server <- function(input, output, session) {
     kategori2<-rowSums(numData[,3:12]); kategori2<-as.data.frame(kategori2)/10
     
     #Keterampilan
-    kategori3<-rowSums(numData[,13:26]); kategori3<-as.data.frame(kategori3)/14
+    kategori3<-rowSums(numData[,13:25]); kategori3<-as.data.frame(kategori3)/13
     
     #Pengembangan dan Motivasi
-    kategori4<-rowSums(numData[,27:29]); kategori4<-as.data.frame(kategori4)/3
+    kategori4<-rowSums(numData[,26:28]); kategori4<-as.data.frame(kategori4)/3
     
     graphData <- cbind(kategori1, kategori2, kategori3, kategori4)
     t_graphData <- as.data.frame(cbind(V1=c("Kesesuaian Peran dalam Implementasi RAD FRK/PPRKD dengan Tugas", "Pengetahuan", "Keterampilan", "Pengembangan dan Motivasi"),t(graphData)))
@@ -154,7 +156,7 @@ server <- function(input, output, session) {
     rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
     rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
     rekomenSatLahan <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.2 + numData$sdm_i1.sdm_i4.q6.3.5)/3
-    rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6 + numData$sdm_i1.sdm_i4.q6.3.7)/3
+    rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6)/2
     rekomenIntervensi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.8 + numData$sdm_i1.sdm_i4.q6.3.9)/3
     rekomenTradeoff <- (numData$sdm_i1.sdm_i4.q6.3.10 + numData$sdm_i1.sdm_i4.q6.3.11)/2
     rekomenHutan <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
