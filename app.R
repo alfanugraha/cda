@@ -42,12 +42,6 @@ dataMoodle_merger <- read_csv(content(rawdata_moodle_merger,"raw",encoding = "UT
 
 saveRDS(dataMoodle_merger, "data/dataMoodle_merger")
 
-dataMoodle_merger$`profil/nama`
-dataMoodle_merger$`profil/institusi`
-dataMoodle_merger$`profil/provinsi`
-dataMoodle_merger$`profil/email`
-dataMoodle_merger$`profil/tanggal`
-
 # Define UI
 ui <- fluidPage(
   
@@ -117,7 +111,7 @@ server <- function(input, output, session) {
                       tempData$`profil/subsektor_001`, #Lahan
                       tempData$`profil/subsektor_002`, #Limbah
                       tempData$`profil/tanggal`) 
-    colnames(metadata) <- c("Email", "Nama", "Gender", "Kategori Pengguna", "Sektor", "Subsektor Lahan", "Subsektor Limbah", "Tanggal")
+    colnames(metadata) <- c("Email", "Nama", "Gender", "Kategori Pengguna", "Sektor", "Subsektor Energi", "Subsektor Lahan", "Subsektor Limbah", "Tanggal")
     
     # temp_numData <- cbind()
     numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
