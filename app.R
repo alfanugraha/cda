@@ -25,14 +25,28 @@ library(readr)
 kobo_server_url <- "https://kf.kobotoolbox.org/"
 kc_server_url <- "https://kc.kobotoolbox.org/"
 
-form_moodle <- 612594 #Individu
+# form_moodle <- 612594 #Individu
+form_moodle_merger <- 327418 #Individu
 
 ## Individu ##
-url_moodle<- paste0(kc_server_url,"api/v1/data/",form_moodle,".csv")
-rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
-dataMoodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
+# url_moodle<- paste0(kc_server_url,"api/v1/data/",form_moodle,"?format=csv")
+# rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
+# dataMoodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
+# 
+# saveRDS(dataMoodle, "data/dataMoodle")
 
-saveRDS(dataMoodle, "data/dataMoodle")
+## Individu Gabungan##
+url_moodle_merger<- paste0(kc_server_url,"api/v1/data/",form_moodle_merger,"?format=csv")
+rawdata_moodle_merger <- GET(url_moodle_merger,authenticate("cdna2019","Icraf2019!"),progress())
+dataMoodle_merger <- read_csv(content(rawdata_moodle_merger,"raw",encoding = "UTF-8"))
+
+saveRDS(dataMoodle_merger, "data/dataMoodle_merger")
+
+dataMoodle_merger$`profil/nama`
+dataMoodle_merger$`profil/institusi`
+dataMoodle_merger$`profil/provinsi`
+dataMoodle_merger$`profil/email`
+dataMoodle_merger$`profil/tanggal`
 
 # Define UI
 ui <- fluidPage(
@@ -60,27 +74,28 @@ server <- function(input, output, session) {
   data <- reactiveValues(maindata=data.frame())
   
   output$valueTable <- renderDataTable({
-    tempData <-readRDS("data/dataMoodle")
+    # tempData <-readRDS("data/dataMoodle")
+    tempData <- readRDS("data/dataMoodle_merger")
     
-    tempData$`profil/gender` <- NULL; tempData$`profil/nama` <- NULL; tempData$`profil/provinsi` <- NULL; tempData$`profil/tanggal` <- NULL; tempData$`profil/institusi` <- NULL; tempData$`profil/noHP` <- NULL; tempData$`profil/email` <- NULL
-    tempData$`meta/instanceID`<-NULL; tempData$`__version__`<-NULL; tempData$`_uuid`<-NULL; tempData$`_submission_time`<-NULL; tempData$`_tags`<-NULL; tempData$`_notes`<-NULL; tempData$`_version_`<-NULL; tempData$`_validation_status`<-NULL
-    
-    tempData$`sdm_i1/sdm_i2/alasan` <- NULL; tempData$`sdm_i1/sdm_i2/alasan_001` <- NULL
-    
-    for (i in 2:9){
-      eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    }
-    for (i in 10:11){
-      eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 12:25){
-      eval(parse(text=paste0("tempData$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 26:28){
-      eval(parse(text=paste0("tempData$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    }
+    # tempData$`profil/gender` <- NULL; tempData$`profil/nama` <- NULL; tempData$`profil/provinsi` <- NULL; tempData$`profil/tanggal` <- NULL; tempData$`profil/institusi` <- NULL; tempData$`profil/noHP` <- NULL; tempData$`profil/email` <- NULL
+    # tempData$`meta/instanceID`<-NULL; tempData$`__version__`<-NULL; tempData$`_uuid`<-NULL; tempData$`_submission_time`<-NULL; tempData$`_tags`<-NULL; tempData$`_notes`<-NULL; tempData$`_version_`<-NULL; tempData$`_validation_status`<-NULL
+    # 
+    # tempData$`sdm_i1/sdm_i2/alasan` <- NULL; tempData$`sdm_i1/sdm_i2/alasan_001` <- NULL
+    # 
+    # for (i in 2:9){
+    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
+    # }
+    # for (i in 10:11){
+    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_0",i,"`","<-NULL")))
+    # }
+    # 
+    # for (i in 12:25){
+    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
+    # }
+    # 
+    # for (i in 26:28){
+    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
+    # }
     
     tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     
@@ -91,9 +106,18 @@ server <- function(input, output, session) {
     
     namaKolom = colnames(tempData[1:length(tempData)])
     filterData <- tempData[which(tempData$nama == input$selectedUser), names(tempData) %in% namaKolom]
+    # selectedUser <- "Admin 1"
+    # filterData <- tempData[which(tempData$nama == selectedUser), names(tempData) %in% namaKolom]
+    tempData$`profil/gender`
+    tempData$`profil/id`
+    tempData$`profil/sektor`
+    tempData$`profil/subsektor` #belum ada data dummy
+    tempData$`profil/subsektor_001`
+    tempData$`profil/subsektor_002` #belum ada data dummy
     
+    # temp_numData <- cbind()
     numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
-
+    
     #Kesesuaian peran
     kategori1<-rowSums(numData[,1:2]); kategori1<-as.data.frame(kategori1)/2
     
@@ -144,7 +168,7 @@ server <- function(input, output, session) {
     # tempData$nama <- c("Admin 1", "Kontributor 1", "Kontributor 2", "Umum 1", "Kontributor 3", "Umum 2", "Umum 3", "Kontributor 4")
     namaKolom = colnames(tempData[1:length(tempData)])
     filterData <- tempData[which(tempData$nama == input$selectedUser), names(tempData) %in% namaKolom]
-
+    
     numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
     
     rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2)/2
