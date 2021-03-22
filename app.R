@@ -99,7 +99,7 @@ server <- function(input, output, session) {
     
     tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     
-    tempData[tempData == "n/a"]  <- NA
+    # tempData[tempData == "n/a"]  <- NA
     tempData <- as.data.frame(tempData)
     tempData$nama <- c("Admin 1", "Kontributor 1", "Kontributor 2", "Kontributor 3","Umum 1","Kontributor 4", "Umum 2", "Umum 3", "Kontributor 5")
     data$maindata <- tempData
@@ -108,12 +108,16 @@ server <- function(input, output, session) {
     filterData <- tempData[which(tempData$nama == input$selectedUser), names(tempData) %in% namaKolom]
     # selectedUser <- "Admin 1"
     # filterData <- tempData[which(tempData$nama == selectedUser), names(tempData) %in% namaKolom]
-    tempData$`profil/gender`
-    tempData$`profil/id`
-    tempData$`profil/sektor`
-    tempData$`profil/subsektor` #belum ada data dummy
-    tempData$`profil/subsektor_001`
-    tempData$`profil/subsektor_002` #belum ada data dummy
+    metadata <- cbind(tempData$`profil/email`,
+                      tempData$`profil/nama`,
+                      tempData$`profil/gender`,
+                      tempData$`profil/id`,
+                      tempData$`profil/sektor`,
+                      tempData$`profil/subsektor`, #Energi
+                      tempData$`profil/subsektor_001`, #Lahan
+                      tempData$`profil/subsektor_002`, #Limbah
+                      tempData$`profil/tanggal`) 
+    colnames(metadata) <- c("Email", "Nama", "Gender", "Kategori Pengguna", "Sektor", "Subsektor Lahan", "Subsektor Limbah", "Tanggal")
     
     # temp_numData <- cbind()
     numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
