@@ -75,6 +75,7 @@ ui <- fluidPage(
              navbarMenu("Sistem", icon = icon("user-cog"),
                         tabPanel("Ringkasan Hasil", fluid = TRUE,
                                  tags$style(button_color_css),
+                                 selectInput("selectedYear", label = "Tahun Analisis", choices = 2019:2030, selected=2019, multiple = FALSE),
                                  h2(textOutput("titleSistem")),
                                  dataTableOutput("resTblSys"),
                                  withSpinner(plotlyOutput("resChartSys"))
@@ -179,8 +180,8 @@ server <- function(input, output, session) {
   output$titleOPD <- renderText({ paste0("Hasil Analisis ", input$selectizeInstitution) })
   output$titleIndividu <- renderText({ paste0("Ringkasan Hasil Analisis Tingkat Individu Provinsi ", categoryProvince$provinsi) })
   output$titleRangkuman <- renderText({ paste0("Rangkuman Keseluruhan Provinsi ", categoryProvince$provinsi) })
-  # output$yearCDNA <- renderText({ paste0("Tahun: ", input$selectedYear) })
-  output$yearCDNA <- renderText({ paste0("Tahun: ", 2019) })
+  output$yearCDNA <- renderText({ paste0("Tahun: ", input$selectedYear) })
+  # output$yearCDNA <- renderText({ paste0("Tahun: ", 2019) })
 
   ####MENU SISTEM####
   ### SUBMENU: Ringkasan Hasil Sistem ####
@@ -191,8 +192,8 @@ server <- function(input, output, session) {
     inputSistem$`pemantauan1/pemantauan5/q9.4.1`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     inputSistem$`pemantauan1/pemantauan5/q9.4.2`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
     inputSistem$year <- format(as.Date(inputSistem$`provinsi/tanggal`), format = "%Y")
-    # inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
-    inputSistem<-filter(inputSistem,inputSistem$year==2019)
+    inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
+    # inputSistem<-filter(inputSistem,inputSistem$year==2019)
     
     ##Define Indikator and Aspek###
     aspek1 <- inputSistem %>% select(`regulasi/regulasi1/q1.1`, `regulasi/regulasi2/q1.2`)
@@ -419,8 +420,8 @@ server <- function(input, output, session) {
     
     summInputOrg<-readRDS("data/dataOrganisasi")
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
-    # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
-    summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
+    # summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
     year <- summInputOrg$year
     # year <- 2019
     summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
@@ -652,8 +653,8 @@ server <- function(input, output, session) {
     summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
     
     summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
-    # summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
-    summInputInd<-filter(summInputInd,summInputInd$year==2019)
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    # summInputInd<-filter(summInputInd,summInputInd$year==2019)
     year <- summInputInd$year
     
     indikator6.1 <- summInputInd %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
@@ -831,8 +832,8 @@ server <- function(input, output, session) {
     summInputSys$`pemantauan1/pemantauan5/q9.4.1`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     summInputSys$`pemantauan1/pemantauan5/q9.4.2`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
     summInputSys$year <- format(as.Date(summInputSys$`provinsi/tanggal`), format = "%Y")
-    # summInputSys<-filter(summInputSys,summInputSys$year==input$selectedYear)
-    summInputSys<-filter(summInputSys,summInputSys$year==2019)
+    summInputSys<-filter(summInputSys,summInputSys$year==input$selectedYear)
+    # summInputSys<-filter(summInputSys,summInputSys$year==2019)
     
     ##Define Indikator and Aspek###
     aspek1 <- summInputSys %>% select(`regulasi/regulasi1/q1.1`, `regulasi/regulasi2/q1.2`)
@@ -910,8 +911,8 @@ server <- function(input, output, session) {
     summInputOrg<-readRDS("data/dataOrganisasi")
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
-    # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
-    summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
+    summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
+    # summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
     summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
     summInputOrg<-as.data.frame(summInputOrg)
     
@@ -1006,8 +1007,8 @@ server <- function(input, output, session) {
     summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
 
     summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
-    # summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
-    summInputInd<-filter(summInputInd,summInputInd$year==2019)
+    summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    # summInputInd<-filter(summInputInd,summInputInd$year==2019)
     
     indikator6.1 <- summInputInd %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
     indikator6.2 <- summInputInd %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
