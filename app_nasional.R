@@ -215,6 +215,13 @@ server <- function(input, output, session) {
     
     summInputInd<-readRDS("data/dataIndividu")
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+    summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.11`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.11`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.12`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.12`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.13`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.13`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
+    
     # summInputInd[summInputInd == "n/a"]  <- NA
     # summInputInd <- na.omit(summInputInd)
     summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
