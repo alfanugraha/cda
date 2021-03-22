@@ -82,9 +82,9 @@ server <- function(input, output, session) {
     ### TINGKAT SISTEM ####
     
     summInputSys <- readRDS("data/dataSistem")
-    summInputSys$`pemantauan1/pemantauan3/q9.2.6`[summInputSys$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
-    summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
-    summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
+    # summInputSys$`pemantauan1/pemantauan3/q9.2.6`[summInputSys$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
+    # summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
+    # summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
     summInputSys$`pemantauan1/pemantauan3/q9.2.6`[is.na(summInputSys$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
     summInputSys$`pemantauan1/pemantauan5/q9.4.1`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     summInputSys$`pemantauan1/pemantauan5/q9.4.2`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.2`)] <- 3

@@ -170,7 +170,7 @@ server <- function(input, output, session) {
     if(!is.null(query$provinsi)){
       categoryProvince$provinsi <- query$provinsi
     } else {
-      categoryProvince$provinsi <- "Bali" #default province
+      categoryProvince$provinsi <- "Jawa Barat" #default province
     }
   })
 
@@ -185,63 +185,44 @@ server <- function(input, output, session) {
   ####MENU SISTEM####
   ### SUBMENU: Ringkasan Hasil Sistem ####
   output$resTblSys <- renderDataTable({
-
-    inputSistem<-readRDS("data/dataSistem")
+    
+    inputSistem <- readRDS("data/dataSistem")
+    inputSistem$`pemantauan1/pemantauan3/q9.2.6`[is.na(inputSistem$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
+    inputSistem$`pemantauan1/pemantauan5/q9.4.1`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
+    inputSistem$`pemantauan1/pemantauan5/q9.4.2`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
     inputSistem$year <- format(as.Date(inputSistem$`provinsi/tanggal`), format = "%Y")
     # inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
     inputSistem<-filter(inputSistem,inputSistem$year==2019)
-
-    inputSistem$`meta/instanceID`<-NULL; inputSistem$`__version__`<-NULL; inputSistem$`_uuid`<-NULL; inputSistem$`_submission_time`<-NULL; inputSistem$`_tags`<-NULL; inputSistem$`_notes`<-NULL
-
-    inputSistem$`regulasi/regulasi1/alasan`<-NULL
-    inputSistem$`regulasi/regulasi2/alasan_001`<-NULL
-    inputSistem$`integrasi1/integrasi2/alasan_002`<-NULL
-    inputSistem$`integrasi1/integrasi3/alasan_003`<-NULL
-    inputSistem$`integrasi1/integrasi4/alasan_004`<-NULL
-    inputSistem$`integrasi1/integrasi5/alasan_005`<-NULL
-    inputSistem$`integrasi1/integrasi6/alasan_006`<-NULL
-    inputSistem$`integrasi1/integrasi6/alasan_007`<-NULL
-    inputSistem$`proses1/proses2/alasan_008`<-NULL
-    inputSistem$`proses1/proses2_001/alasan_009`<-NULL
-    inputSistem$`proses1/proses3/alasan_010`<-NULL
-    inputSistem$`proses1/proses4/alasan_011`<-NULL
-    inputSistem$`proses1/proses4_001/alasan_012`<-NULL
-
-    for (i in 13:31){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 32:50){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 51:52){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 53:57){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 58:63){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 64:66){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 67:68){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
-    }
-
-    inputSistem<-as.data.frame(inputSistem)
-    inputSistem$`pemantauan1/pemantauan3/q9.2.6`[inputSistem$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
-    inputSistem$`pemantauan1/pemantauan5/q9.4.1`[inputSistem$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
-    inputSistem$`pemantauan1/pemantauan5/q9.4.2`[inputSistem$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
-    inputSistem[is.na(inputSistem)]<-3
-    sistem<- as.data.frame(lapply(inputSistem[,3:length(inputSistem)], as.numeric))
-
+    
+    ##Define Indikator and Aspek###
+    aspek1 <- inputSistem %>% select(`regulasi/regulasi1/q1.1`, `regulasi/regulasi2/q1.2`)
+    aspek2 <- inputSistem %>% select(`integrasi1/integrasi2/q2.1`, `integrasi1/integrasi3/q2.2`, `integrasi1/integrasi4/q2.3`, `integrasi1/integrasi5/q2.4`)
+    indikator2.5 <- inputSistem %>% select(`integrasi1/integrasi6/q2.5.1`, `integrasi1/integrasi6/q2.5.2`)
+    aspek3 <- inputSistem  %>% select(`proses1/proses2/q3.1`, `proses1/proses2_001/q3.2`, `proses1/proses3/q3.3`, `proses1/proses4/q3.4`, `proses1/proses4_001/q3.5`)
+    indikator7.1 <- inputSistem %>% select(`datainfo1/datainfo2/q7.1.1`, `datainfo1/datainfo2/q7.1.2`, `datainfo1/datainfo2/q7.1.3`, `datainfo1/datainfo2/q7.1.4`,
+                                            `datainfo1/datainfo2/q7.1.5`, `datainfo1/datainfo2/q7.1.6`, `datainfo1/datainfo2/q7.1.7`, `datainfo1/datainfo2/q7.1.8`,
+                                            `datainfo1/datainfo2/q7.1.9`, `datainfo1/datainfo2/q7.1.10`, `datainfo1/datainfo2/q7.1.11`, `datainfo1/datainfo2/q7.1.12`,
+                                            `datainfo1/datainfo2/q7.1.13`, `datainfo1/datainfo2/q7.1.14`, `datainfo1/datainfo2/q7.1.15`, `datainfo1/datainfo2/q7.1.16`,
+                                            `datainfo1/datainfo2/q7.1.17`, `datainfo1/datainfo2/q7.1.18`, `datainfo1/datainfo2/q7.1.19`)
+    indikator7.2 <- inputSistem %>% select(`datainfo1/datainfo3/q7.2.1`, `datainfo1/datainfo3/q7.2.2`, `datainfo1/datainfo3/q7.2.3`, `datainfo1/datainfo3/q7.2.4`,
+                                            `datainfo1/datainfo3/q7.2.5`, `datainfo1/datainfo3/q7.2.6`, `datainfo1/datainfo3/q7.2.7`, `datainfo1/datainfo3/q7.2.8`,
+                                            `datainfo1/datainfo3/q7.2.9`, `datainfo1/datainfo3/q7.2.10`, `datainfo1/datainfo3/q7.2.11`, `datainfo1/datainfo3/q7.2.12`,
+                                            `datainfo1/datainfo3/q7.2.13`, `datainfo1/datainfo3/q7.2.14`, `datainfo1/datainfo3/q7.2.15`, `datainfo1/datainfo3/q7.2.16`,
+                                            `datainfo1/datainfo3/q7.2.17`, `datainfo1/datainfo3/q7.2.18`, `datainfo1/datainfo3/q7.2.19`)
+    indikator7.3 <- inputSistem %>% select(`datainfo1/datainfo4/q7.3.1`, `datainfo1/datainfo4/q7.3.2`)
+    indikator9.1 <- inputSistem %>% select(`pemantauan1/pemantauan2/q9.1.1`, `pemantauan1/pemantauan2/q9.1.2`, `pemantauan1/pemantauan2/q9.1.3`, `pemantauan1/pemantauan2/q9.1.4`,
+                                            `pemantauan1/pemantauan2/q9.1.5`)
+    indikator9.2 <- inputSistem %>% select(`pemantauan1/pemantauan3/q9.2.1`, `pemantauan1/pemantauan3/q9.2.2`, `pemantauan1/pemantauan3/q9.2.3`, `pemantauan1/pemantauan3/q9.2.4`,
+                                            `pemantauan1/pemantauan3/q9.2.5`, `pemantauan1/pemantauan3/q9.2.6`)
+    indikator9.3 <- inputSistem %>% select(`pemantauan1/pemantauan4/q9.3.1`, `pemantauan1/pemantauan4/q9.3.2`, `pemantauan1/pemantauan4/q9.3.3`)
+    indikator9.4 <- inputSistem %>% select(`pemantauan1/pemantauan5/q9.4.1`, `pemantauan1/pemantauan5/q9.4.2`)
+    
+    temp_summSys <- cbind(inputSistem$`provinsi/provinsi_001`, inputSistem$year, aspek1, aspek2, indikator2.5, aspek3, 
+                          indikator7.1, indikator7.2, indikator7.3, indikator9.1, indikator9.2, indikator9.2, indikator9.3, indikator9.4)
+    
+    sistem<- as.data.frame(lapply(temp_summSys[,3:(length(temp_summSys))], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Sistem###
     q2.5<-rowSums(sistem[,9:10]); q2.5<- as.data.frame(q2.5)/2
     q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
     q7.2 <- rowSums(sistem[,33:51]); q7.2<- as.data.frame(q7.2)/19
@@ -250,8 +231,9 @@ server <- function(input, output, session) {
     q9.2<-rowSums(sistem[,59:64]); q9.2<-as.data.frame(q9.2)/6
     q9.3<-rowSums(sistem[,65:67]); q9.3<-as.data.frame(q9.3)/3
     q9.4<-rowSums(sistem[,68:69]); q9.4<-as.data.frame(q9.4)/2
-
-    levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2, sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5,sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3 ,sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
+    
+    ##Tabel Level dari Indikator###
+    levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2,sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5, sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3, sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1, q7.2, q7.3, q9.1, q9.2, q9.3, q9.4)
     colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
 
     gap_1.1<-5-levelSistem$q1.1; gap_1.2<-5-levelSistem$q1.2; gap_2.1<-5-levelSistem$q2.1; gap_2.2<-5-levelSistem$q2.2; gap_2.3<-5-levelSistem$q2.3; gap_2.4<-5-levelSistem$q2.4; gap_2.5<-5-levelSistem$q2.5
@@ -266,6 +248,7 @@ server <- function(input, output, session) {
 
     ## Menampilkan hasil satu provinsi ##
     tempSistem<-filter(tempSistem,Provinsi==categoryProvince$provinsi)
+    # tempSistem<-filter(tempSistem,Provinsi=="Aceh")
 
     ## Membuat tabel Level setiap aspek ##
     aspekSys<-c("1. Regulasi/peraturan daerah","2. Integrasi dalam Perencanaan Pembangunan Daerah", "3. Proses", "7. Data dan Informasi", "9. Pemantauan, Evaluasi, dan Pelaporan")
@@ -301,10 +284,14 @@ server <- function(input, output, session) {
     graphSistem <- tablesCDA$summarySystem
     plot_ly(graphSistem, y=~Indikator, x=~Level, type='bar', name='Level', orientation= 'h')%>%
       add_trace(x=~GAP, name= 'GAP') %>%
-      layout(yaxis=list(title=''), xaxis = list(title = ''), barmode='stack')  %>% 
-      layout(xaxis = list(titlefont = list(size = 12), tickfont = list(size = 12)),
-              yaxis = list(titlefont = list(size = 10)) ) %>% 
-      layout(legend = list(orientation = 'h'))
+      layout(yaxis=list(title='Indikator'), barmode='stack') %>%
+      layout(legend = list(orientation = 'h')) %>%
+      layout(yaxis = list(tickfont = list(size = 8), tickangle = 45, title = ""),
+             xaxis = list(title = ""))
+      # layout(yaxis=list(title=''), xaxis = list(title = ''), barmode='stack')  %>% 
+      # layout(xaxis = list(titlefont = list(size = 12), tickfont = list(size = 12)),
+      #         yaxis = list(titlefont = list(size = 6))) %>% 
+      # layout(legend = list(orientation = 'h'))
   })
 
   ## ggplot untuk unduh hasil anlisis ##
@@ -330,63 +317,44 @@ server <- function(input, output, session) {
   ### SUBMENU: Pebandingan Hasil Tahunan Sistem ####
   output$multiTableSistem<- renderDataTable({
 
-    inputSistem<-readRDS("data/dataSistem")
+    inputSistem <- readRDS("data/dataSistem")
+    inputSistem$`pemantauan1/pemantauan3/q9.2.6`[is.na(inputSistem$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
+    inputSistem$`pemantauan1/pemantauan5/q9.4.1`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
+    inputSistem$`pemantauan1/pemantauan5/q9.4.2`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
     inputSistem$year <- format(as.Date(inputSistem$`provinsi/tanggal`), format = "%Y")
     year <- inputSistem$year
     # inputSistem<-filter(inputSistem,inputSistem$year==input$selectedYear)
     # inputSistem<-filter(inputSistem,inputSistem$year==2019)
-
-    inputSistem$`meta/instanceID`<-NULL; inputSistem$`__version__`<-NULL; inputSistem$`_uuid`<-NULL; inputSistem$`_submission_time`<-NULL; inputSistem$`_tags`<-NULL; inputSistem$`_notes`<-NULL
-
-    inputSistem$`regulasi/regulasi1/alasan`<-NULL
-    inputSistem$`regulasi/regulasi2/alasan_001`<-NULL
-    inputSistem$`integrasi1/integrasi2/alasan_002`<-NULL
-    inputSistem$`integrasi1/integrasi3/alasan_003`<-NULL
-    inputSistem$`integrasi1/integrasi4/alasan_004`<-NULL
-    inputSistem$`integrasi1/integrasi5/alasan_005`<-NULL
-    inputSistem$`integrasi1/integrasi6/alasan_006`<-NULL
-    inputSistem$`integrasi1/integrasi6/alasan_007`<-NULL
-    inputSistem$`proses1/proses2/alasan_008`<-NULL
-    inputSistem$`proses1/proses2_001/alasan_009`<-NULL
-    inputSistem$`proses1/proses3/alasan_010`<-NULL
-    inputSistem$`proses1/proses4/alasan_011`<-NULL
-    inputSistem$`proses1/proses4_001/alasan_012`<-NULL
-
-    for (i in 13:31){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 32:50){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 51:52){
-      eval(parse(text=paste0("inputSistem$`datainfo1/datainfo4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 53:57){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 58:63){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 64:66){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 67:68){
-      eval(parse(text=paste0("inputSistem$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
-    }
-
-    inputSistem<-as.data.frame(inputSistem)
-    inputSistem$`pemantauan1/pemantauan3/q9.2.6`[inputSistem$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
-    inputSistem$`pemantauan1/pemantauan5/q9.4.1`[inputSistem$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
-    inputSistem$`pemantauan1/pemantauan5/q9.4.2`[inputSistem$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
-    inputSistem[is.na(inputSistem)]<-3
-    sistem<- as.data.frame(lapply(inputSistem[,3:length(inputSistem)], as.numeric))
-
+    
+    ##Define Indikator and Aspek###
+    aspek1 <- inputSistem %>% select(`regulasi/regulasi1/q1.1`, `regulasi/regulasi2/q1.2`)
+    aspek2 <- inputSistem %>% select(`integrasi1/integrasi2/q2.1`, `integrasi1/integrasi3/q2.2`, `integrasi1/integrasi4/q2.3`, `integrasi1/integrasi5/q2.4`)
+    indikator2.5 <- inputSistem %>% select(`integrasi1/integrasi6/q2.5.1`, `integrasi1/integrasi6/q2.5.2`)
+    aspek3 <- inputSistem  %>% select(`proses1/proses2/q3.1`, `proses1/proses2_001/q3.2`, `proses1/proses3/q3.3`, `proses1/proses4/q3.4`, `proses1/proses4_001/q3.5`)
+    indikator7.1 <- inputSistem %>% select(`datainfo1/datainfo2/q7.1.1`, `datainfo1/datainfo2/q7.1.2`, `datainfo1/datainfo2/q7.1.3`, `datainfo1/datainfo2/q7.1.4`,
+                                           `datainfo1/datainfo2/q7.1.5`, `datainfo1/datainfo2/q7.1.6`, `datainfo1/datainfo2/q7.1.7`, `datainfo1/datainfo2/q7.1.8`,
+                                           `datainfo1/datainfo2/q7.1.9`, `datainfo1/datainfo2/q7.1.10`, `datainfo1/datainfo2/q7.1.11`, `datainfo1/datainfo2/q7.1.12`,
+                                           `datainfo1/datainfo2/q7.1.13`, `datainfo1/datainfo2/q7.1.14`, `datainfo1/datainfo2/q7.1.15`, `datainfo1/datainfo2/q7.1.16`,
+                                           `datainfo1/datainfo2/q7.1.17`, `datainfo1/datainfo2/q7.1.18`, `datainfo1/datainfo2/q7.1.19`)
+    indikator7.2 <- inputSistem %>% select(`datainfo1/datainfo3/q7.2.1`, `datainfo1/datainfo3/q7.2.2`, `datainfo1/datainfo3/q7.2.3`, `datainfo1/datainfo3/q7.2.4`,
+                                           `datainfo1/datainfo3/q7.2.5`, `datainfo1/datainfo3/q7.2.6`, `datainfo1/datainfo3/q7.2.7`, `datainfo1/datainfo3/q7.2.8`,
+                                           `datainfo1/datainfo3/q7.2.9`, `datainfo1/datainfo3/q7.2.10`, `datainfo1/datainfo3/q7.2.11`, `datainfo1/datainfo3/q7.2.12`,
+                                           `datainfo1/datainfo3/q7.2.13`, `datainfo1/datainfo3/q7.2.14`, `datainfo1/datainfo3/q7.2.15`, `datainfo1/datainfo3/q7.2.16`,
+                                           `datainfo1/datainfo3/q7.2.17`, `datainfo1/datainfo3/q7.2.18`, `datainfo1/datainfo3/q7.2.19`)
+    indikator7.3 <- inputSistem %>% select(`datainfo1/datainfo4/q7.3.1`, `datainfo1/datainfo4/q7.3.2`)
+    indikator9.1 <- inputSistem %>% select(`pemantauan1/pemantauan2/q9.1.1`, `pemantauan1/pemantauan2/q9.1.2`, `pemantauan1/pemantauan2/q9.1.3`, `pemantauan1/pemantauan2/q9.1.4`,
+                                           `pemantauan1/pemantauan2/q9.1.5`)
+    indikator9.2 <- inputSistem %>% select(`pemantauan1/pemantauan3/q9.2.1`, `pemantauan1/pemantauan3/q9.2.2`, `pemantauan1/pemantauan3/q9.2.3`, `pemantauan1/pemantauan3/q9.2.4`,
+                                           `pemantauan1/pemantauan3/q9.2.5`, `pemantauan1/pemantauan3/q9.2.6`)
+    indikator9.3 <- inputSistem %>% select(`pemantauan1/pemantauan4/q9.3.1`, `pemantauan1/pemantauan4/q9.3.2`, `pemantauan1/pemantauan4/q9.3.3`)
+    indikator9.4 <- inputSistem %>% select(`pemantauan1/pemantauan5/q9.4.1`, `pemantauan1/pemantauan5/q9.4.2`)
+    
+    temp_summSys <- cbind(inputSistem$`provinsi/provinsi_001`, inputSistem$year, aspek1, aspek2, indikator2.5, aspek3, 
+                          indikator7.1, indikator7.2, indikator7.3, indikator9.1, indikator9.2, indikator9.2, indikator9.3, indikator9.4)
+    
+    sistem<- as.data.frame(lapply(temp_summSys[,3:(length(temp_summSys))], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Sistem###
     q2.5<-rowSums(sistem[,9:10]); q2.5<- as.data.frame(q2.5)/2
     q7.1 <- rowSums(sistem[,14:32]); q7.1<- as.data.frame(q7.1)/19
     q7.2 <- rowSums(sistem[,33:51]); q7.2<- as.data.frame(q7.2)/19
@@ -395,19 +363,20 @@ server <- function(input, output, session) {
     q9.2<-rowSums(sistem[,59:64]); q9.2<-as.data.frame(q9.2)/6
     q9.3<-rowSums(sistem[,65:67]); q9.3<-as.data.frame(q9.3)/3
     q9.4<-rowSums(sistem[,68:69]); q9.4<-as.data.frame(q9.4)/2
-
-    levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2, sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5,sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3 ,sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1,q7.2,q7.3,q9.1,q9.2,q9.3,q9.4)
+    
+    ##Tabel Level dari Indikator###
+    levelSistem<-cbind(inputSistem$`provinsi/provinsi_001`,sistem$regulasi.regulasi1.q1.1,sistem$regulasi.regulasi2.q1.2,sistem$integrasi1.integrasi2.q2.1,sistem$integrasi1.integrasi3.q2.2,sistem$integrasi1.integrasi4.q2.3, sistem$integrasi1.integrasi5.q2.4, q2.5, sistem$proses1.proses2.q3.1, sistem$proses1.proses2_001.q3.2, sistem$proses1.proses3.q3.3, sistem$proses1.proses4.q3.4, sistem$proses1.proses4_001.q3.5, q7.1, q7.2, q7.3, q9.1, q9.2, q9.3, q9.4)
     colnames(levelSistem)<-c("Provinsi","q1.1","q1.2","q2.1","q2.2","q2.3","q2.4","q2.5","q3.1","q3.2","q3.3","q3.4","q3.5","q7.1","q7.2","q7.3","q9.1","q9.2","q9.3","q9.4")
-
+    
     tempSistem<-as.data.frame(cbind(year, levelSistem))
-
+    
     file_indSys<- read.table("init/system.csv", header=TRUE, sep=",")
     indikatorSys <- as.character(unique(file_indSys$Kapasitas_Fungsional))
-
+    
     ## Menampilkan hasil satu provinsi ##
     tempSistem<-filter(tempSistem,Provinsi==categoryProvince$provinsi)
-    # tempSistem<-filter(tempSistem,Provinsi=="Bali")
-
+    # tempSistem<-filter(tempSistem,Provinsi=="Aceh")
+    
     ## Menampilkan level per indikator ##
     tableSistem <- aggregate(tempSistem[,3:length(tempSistem)], list(tempSistem$year), mean)
     roundTableSistem <- round(tableSistem[2:length(tableSistem)], digits=2)
@@ -447,79 +416,42 @@ server <- function(input, output, session) {
   ### Ringkasan Hasil Organisasi ###
   ### SUBMENU: Ringkasan Hasil Organisasi ####
   output$resTblOrgAll <- renderDataTable({
+    
     summInputOrg<-readRDS("data/dataOrganisasi")
-    
-    summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
-    summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
-    
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
-    
-    for (i in 2:4){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
-    }
-    
-    for (i in 5:6){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
-    }
-    for (i in 7:9){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
-    }
-    summInputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
-    
-    for (i in 11:13){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 14:15){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 16:22){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 23:29){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
-    }
-    
-    summInputOrg$`sdm1/sdm3/alasan_030`<-NULL
-    summInputOrg$`sdm1/sdm4/alasan_031`<-NULL
-    
-    for (i in 32:33){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 34:35){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 36:39){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 40:42){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 43:44){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
-    }
-    
-    summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
-    
-    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
-    summInputOrg[summInputOrg == "n/a"]<-NA
-    summInputOrg<-na.omit(summInputOrg)
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
-    year <- 2019
-    # year <- summInputOrg$year
+    year <- summInputOrg$year
+    # year <- 2019
+    summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
     summInputOrg<-as.data.frame(summInputOrg)
     
-    summOrg<-as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
+    ##Define Indikator###
+    indikator4.1 <- summInputOrg %>% select (`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.1`, `perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.2`)
+    indikator4.2 <- summInputOrg %>% select (`perangkat1/perangkat2/q4.2.1`, `perangkat1/perangkat2/q4.2.2`, `perangkat1/perangkat2/q4.2.3`)
+    indikator4.3 <- summInputOrg %>% select (`perangkat1/perangkat3/q4.3.1`, `perangkat1/perangkat3/q4.3.2`)
+    indikator4.4 <- summInputOrg %>% select (`perangkat1/perangkat4/q4.4.1`, `perangkat1/perangkat4/q4.4.2`, `perangkat1/perangkat4/q4.4.3`, `perangkat1/perangkat4/q4.4.4`)
+    indikator4.5 <- summInputOrg %>% select (`perangkat1/perangkat5/q4.5.1`, `perangkat1/perangkat5/q4.5.2`, `perangkat1/perangkat5/q4.5.3`)
+    indikator4.6 <- summInputOrg %>% select (`perangkat1/perangkat6/q4.6.1`, `perangkat1/perangkat6/q4.6.2`)
+    indikator4.7 <- summInputOrg %>% select (`perangkat1/perangkat7/q4.7.1`, `perangkat1/perangkat7/q4.7.2`, `perangkat1/perangkat7/q4.7.3`, `perangkat1/perangkat7/q4.7.4`,
+                                             `perangkat1/perangkat7/q4.7.5`, `perangkat1/perangkat7/q4.7.6`, `perangkat1/perangkat7/q4.7.7`)
+    indikator5.1 <- summInputOrg %>% select (`sdm1/sdm2/q5.1.1`, `sdm1/sdm2/q5.1.2`, `sdm1/sdm2/q5.1.3`, `sdm1/sdm2/q5.1.4`, `sdm1/sdm2/q5.1.5`,
+                                             `sdm1/sdm2/q5.1.6`, `sdm1/sdm2/q5.1.7`)
+    indikator5.2 <- summInputOrg %>% select (`sdm1/sdm3/q5.2`)
+    indikator5.3 <- summInputOrg %>% select (`sdm1/sdm4/q5.3`)
+    indikator5.4 <- summInputOrg %>% select (`sdm1/sdm5/q5.4.1`, `sdm1/sdm5/q5.4.2`)
+    indikator5.5 <- summInputOrg %>% select (`sdm1/sdm6/q5.5.1`, `sdm1/sdm6/q5.5.2`)
+    indikator8.1 <- summInputOrg %>% select (`teknologi1/teknologi2/q8.1.1`, `teknologi1/teknologi2/q8.1.2`, `teknologi1/teknologi2/q8.1.3`, `teknologi1/teknologi2/q8.1.4`)
+    indikator8.2 <- summInputOrg %>% select (`teknologi1/teknologi3/q8.2.1`, `teknologi1/teknologi3/q8.2.2`)
+    indikator8.3 <- summInputOrg %>% select (`teknologi1/teknologi4/q8.3.1`, `teknologi1/teknologi4/q8.3.2`)
     
+    temp_summOrg <- cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`, summInputOrg$year, indikator4.1, indikator4.2,
+                          indikator4.3, indikator4.4, indikator4.5, indikator4.6, indikator4.7, indikator5.1, indikator5.2, indikator5.3, indikator5.4, indikator5.5,
+                          indikator8.1, indikator8.2, indikator8.3)
+    
+    summOrg<- as.data.frame(lapply(temp_summOrg[,5:length(temp_summOrg)], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Organisai###
     q4.1<-rowSums(summOrg[,1:2]); q4.1<-as.data.frame(q4.1)/2
     q4.2<-rowSums(summOrg[,3:5]); q4.2<-as.data.frame(q4.2)/3
     q4.3<-rowSums(summOrg[,6:7]); q4.3<-as.data.frame(q4.3)/2
@@ -534,6 +466,7 @@ server <- function(input, output, session) {
     q8.1<-rowSums(summOrg[,37:40]); q8.1<-as.data.frame(q8.1)/4
     q8.2<-rowSums(summOrg[,41:42]); q8.2<-as.data.frame(q8.2)/2
     q8.3<-rowSums(summOrg[,43:44]); q8.3<-as.data.frame(q8.3)/2
+    
     valOrganisasi <-cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
     colnames(valOrganisasi) <-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
     summTempOrganisasi <-as.data.frame(cbind(valOrganisasi,year))
@@ -608,79 +541,42 @@ server <- function(input, output, session) {
 
   ### SUBMENU: Pebandingan Hasil Tahunan Organisasi ####
   output$multiTableOrganisasi <- renderDataTable({
-    summInputOrg<-readRDS("data/dataOrganisasi")
-
-    summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
-    summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
-
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
-
-    for (i in 2:4){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
-    }
-
-    for (i in 5:6){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
-    }
-    for (i in 7:9){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
-    }
-    summInputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
-
-    for (i in 11:13){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 14:15){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 16:22){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 23:29){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
-    }
-
-    summInputOrg$`sdm1/sdm3/alasan_030`<-NULL
-    summInputOrg$`sdm1/sdm4/alasan_031`<-NULL
-
-    for (i in 32:33){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 34:35){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 36:39){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 40:42){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 43:44){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
-    }
     
+    summInputOrg<-readRDS("data/dataOrganisasi")
     summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
-
-    summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
-    summInputOrg[summInputOrg == "n/a"]<-NA
-    summInputOrg<-na.omit(summInputOrg)
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
-    # year <- 2019
     year <- summInputOrg$year
+    # year <- 2019
     summInputOrg<-as.data.frame(summInputOrg)
-
-    summOrg<-as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
-
+    
+    ##Define Indikator###
+    indikator4.1 <- summInputOrg %>% select (`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.1`, `perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.2`)
+    indikator4.2 <- summInputOrg %>% select (`perangkat1/perangkat2/q4.2.1`, `perangkat1/perangkat2/q4.2.2`, `perangkat1/perangkat2/q4.2.3`)
+    indikator4.3 <- summInputOrg %>% select (`perangkat1/perangkat3/q4.3.1`, `perangkat1/perangkat3/q4.3.2`)
+    indikator4.4 <- summInputOrg %>% select (`perangkat1/perangkat4/q4.4.1`, `perangkat1/perangkat4/q4.4.2`, `perangkat1/perangkat4/q4.4.3`, `perangkat1/perangkat4/q4.4.4`)
+    indikator4.5 <- summInputOrg %>% select (`perangkat1/perangkat5/q4.5.1`, `perangkat1/perangkat5/q4.5.2`, `perangkat1/perangkat5/q4.5.3`)
+    indikator4.6 <- summInputOrg %>% select (`perangkat1/perangkat6/q4.6.1`, `perangkat1/perangkat6/q4.6.2`)
+    indikator4.7 <- summInputOrg %>% select (`perangkat1/perangkat7/q4.7.1`, `perangkat1/perangkat7/q4.7.2`, `perangkat1/perangkat7/q4.7.3`, `perangkat1/perangkat7/q4.7.4`,
+                                             `perangkat1/perangkat7/q4.7.5`, `perangkat1/perangkat7/q4.7.6`, `perangkat1/perangkat7/q4.7.7`)
+    indikator5.1 <- summInputOrg %>% select (`sdm1/sdm2/q5.1.1`, `sdm1/sdm2/q5.1.2`, `sdm1/sdm2/q5.1.3`, `sdm1/sdm2/q5.1.4`, `sdm1/sdm2/q5.1.5`,
+                                             `sdm1/sdm2/q5.1.6`, `sdm1/sdm2/q5.1.7`)
+    indikator5.2 <- summInputOrg %>% select (`sdm1/sdm3/q5.2`)
+    indikator5.3 <- summInputOrg %>% select (`sdm1/sdm4/q5.3`)
+    indikator5.4 <- summInputOrg %>% select (`sdm1/sdm5/q5.4.1`, `sdm1/sdm5/q5.4.2`)
+    indikator5.5 <- summInputOrg %>% select (`sdm1/sdm6/q5.5.1`, `sdm1/sdm6/q5.5.2`)
+    indikator8.1 <- summInputOrg %>% select (`teknologi1/teknologi2/q8.1.1`, `teknologi1/teknologi2/q8.1.2`, `teknologi1/teknologi2/q8.1.3`, `teknologi1/teknologi2/q8.1.4`)
+    indikator8.2 <- summInputOrg %>% select (`teknologi1/teknologi3/q8.2.1`, `teknologi1/teknologi3/q8.2.2`)
+    indikator8.3 <- summInputOrg %>% select (`teknologi1/teknologi4/q8.3.1`, `teknologi1/teknologi4/q8.3.2`)
+    
+    temp_summOrg <- cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`, summInputOrg$year, indikator4.1, indikator4.2,
+                          indikator4.3, indikator4.4, indikator4.5, indikator4.6, indikator4.7, indikator5.1, indikator5.2, indikator5.3, indikator5.4, indikator5.5,
+                          indikator8.1, indikator8.2, indikator8.3)
+    
+    summOrg<- as.data.frame(lapply(temp_summOrg[,5:length(temp_summOrg)], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Organisai###
     q4.1<-rowSums(summOrg[,1:2]); q4.1<-as.data.frame(q4.1)/2
     q4.2<-rowSums(summOrg[,3:5]); q4.2<-as.data.frame(q4.2)/3
     q4.3<-rowSums(summOrg[,6:7]); q4.3<-as.data.frame(q4.3)/2
@@ -695,6 +591,7 @@ server <- function(input, output, session) {
     q8.1<-rowSums(summOrg[,37:40]); q8.1<-as.data.frame(q8.1)/4
     q8.2<-rowSums(summOrg[,41:42]); q8.2<-as.data.frame(q8.2)/2
     q8.3<-rowSums(summOrg[,43:44]); q8.3<-as.data.frame(q8.3)/2
+    
     valOrganisasi <-cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`,q4.1,q4.2,q4.3,q4.4,q4.5,q4.6,q4.7,q5.1,q5.2,q5.3,q5.4,q5.5,q8.1,q8.2,q8.3)
     colnames(valOrganisasi) <-c("Provinsi", "Institusi", "Nama", "q4.1", "q4.2", "q4.3", "q4.4", "q4.5", "q4.6", "q4.7", "q5.1", "q5.2", "q5.3", "q5.4", "q5.5", "q8.1", "q8.2", "q8.3" )
     summTempOrganisasi <-as.data.frame(cbind(year, valOrganisasi))
@@ -704,7 +601,7 @@ server <- function(input, output, session) {
 
     ## Menampilkan hasil satu provinsi untuk tingkat organisasi ##
     summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`==categoryProvince$provinsi)
-    # summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Bali")
+    # summTempOrganisasi <-filter(summTempOrganisasi,summInputOrg$`profil/provinsi`=="Aceh")
 
     ## Menampilkan level per indikator ##
     tableOrganisasi <- aggregate(summTempOrganisasi[,5:length(summTempOrganisasi)], list(summTempOrganisasi$year), mean)
@@ -744,46 +641,39 @@ server <- function(input, output, session) {
   ####MENU INDIVIDU####
   ### SUBMENU: Ringkasan Hasil Inidividu ####
   output$resTblIndAll <- renderDataTable({
+    
     summInputInd<-readRDS("data/dataIndividu")
-    
-    summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
-    summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
-    
-    summInputInd$`sdm_i1/sdm_i2/alasan`<-NULL
-    summInputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
-    
-    for (i in 2:9){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    }
-    summInputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
-    
-    for (i in 11:19){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    }
-    
-    for (i in 20:22){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    }
-    
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+    summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.11`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.11`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.12`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.12`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.13`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.13`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
     
-    ## Menghilangkan n/a pada data frame ##
-    summInputInd[summInputInd == "n/a"]  <- NA
-    summInputInd <- na.omit(summInputInd)
     summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
     # summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
-    # year <- summInputInd$year
     summInputInd<-filter(summInputInd,summInputInd$year==2019)
-    year <- 2019
+    year <- summInputInd$year
     
-    summInputInd <- as.data.frame(summInputInd)
+    indikator6.1 <- summInputInd %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+    indikator6.2 <- summInputInd %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                             `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                             `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+    indikator6.3 <- summInputInd %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                             `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                             `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                             `sdm_i1/sdm_i4/q6.3.14`)
+    indikator6.4 <- summInputInd %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
     
-    summInd<- as.data.frame(lapply(summInputInd[,5:(length(summInputInd)-1)], as.numeric))
+    temp_summInd <- cbind(summInputInd$`profil/provinsi`, summInputInd$`profil/nama`, summInputInd$`profil/institusi`, indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+    
+    summInd<- as.data.frame(lapply(temp_summInd[,4:length(temp_summInd)], as.numeric))
     
     q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
-    q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
-    q6.3<-rowSums(summInd[,12:19]); q6.3<-as.data.frame(q6.3)/8
-    q6.4<-rowSums(summInd[,20:22]); q6.4<-as.data.frame(q6.4)/3
+    q6.2<-rowSums(summInd[,3:12]); q6.2<-as.data.frame(q6.2)/10
+    q6.3<-rowSums(summInd[,13:25]); q6.3<-as.data.frame(q6.3)/13
+    q6.4<-rowSums(summInd[,26:28]); q6.4<-as.data.frame(q6.4)/3
     valInd<-cbind(summInputInd$`profil/provinsi`,summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
     colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
     summTempIndividu<-as.data.frame(cbind(valInd,year))
@@ -826,43 +716,40 @@ server <- function(input, output, session) {
 
   ### SUBMENU: Pebandingan Hasil Tahunan Individu ####
   output$multiTableIndividu <- renderDataTable({
+    
     summInputInd<-readRDS("data/dataIndividu")
-
-    summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
-    summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
-
-    summInputInd$`sdm_i1/sdm_i2/alasan`<-NULL
-    summInputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
-
-    for (i in 2:9){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    }
-    summInputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
-
-    for (i in 11:19){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 20:22){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    }
-    
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
-
-    ## Menghilangkan n/a pada data frame ##
-    summInputInd[summInputInd == "n/a"]  <- NA
-    summInputInd <- na.omit(summInputInd)
-    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
-    year <- as.data.frame(summInputInd$year)
+    summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.11`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.11`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.12`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.12`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.13`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.13`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
     
-    summInputInd <- as.data.frame(summInputInd)
-
-    summInd<- as.data.frame(lapply(summInputInd[,5:(length(summInputInd)-1)], as.numeric))
-
+    summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
+    # summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
+    # summInputInd<-filter(summInputInd,summInputInd$year==2019)
+    year <- summInputInd$year
+    
+    indikator6.1 <- summInputInd %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+    indikator6.2 <- summInputInd %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                             `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                             `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+    indikator6.3 <- summInputInd %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                             `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                             `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                             `sdm_i1/sdm_i4/q6.3.14`)
+    indikator6.4 <- summInputInd %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
+    
+    temp_summInd <- cbind(summInputInd$`profil/provinsi`, summInputInd$`profil/nama`, summInputInd$`profil/institusi`, indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+    
+    summInd<- as.data.frame(lapply(temp_summInd[,4:length(temp_summInd)], as.numeric))
+    
     q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
-    q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
-    q6.3<-rowSums(summInd[,12:19]); q6.3<-as.data.frame(q6.3)/8
-    q6.4<-rowSums(summInd[,20:22]); q6.4<-as.data.frame(q6.4)/3
+    q6.2<-rowSums(summInd[,3:12]); q6.2<-as.data.frame(q6.2)/10
+    q6.3<-rowSums(summInd[,13:25]); q6.3<-as.data.frame(q6.3)/13
+    q6.4<-rowSums(summInd[,26:28]); q6.4<-as.data.frame(q6.4)/3
+
     valInd<-cbind(summInputInd$`profil/provinsi`, year, summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
     colnames(valInd)<-c("Provinsi", "Tahun", "Nama", "q6.1","q6.2","q6.3","q6.4")
     summTempIndividu<-as.data.frame(valInd)
@@ -939,64 +826,43 @@ server <- function(input, output, session) {
   ### SUBMENU: Ringkasan Hasil Rangkuman ####
   output$resTblSumm <- renderDataTable({
     #### Tabel Prioritas Tingkat Sistem ####
-    summInputSys<-readRDS("data/dataSistem")
-
-    summInputSys$`meta/instanceID`<-NULL; summInputSys$`__version__`<-NULL; summInputSys$`_uuid`<-NULL; summInputSys$`_submission_time`<-NULL; summInputSys$`_tags`<-NULL; summInputSys$`_notes`<-NULL
-
-    summInputSys$`regulasi/regulasi1/alasan`<-NULL
-    summInputSys$`regulasi/regulasi2/alasan_001`<-NULL
-    summInputSys$`integrasi1/integrasi2/alasan_002`<-NULL
-    summInputSys$`integrasi1/integrasi3/alasan_003`<-NULL
-    summInputSys$`integrasi1/integrasi4/alasan_004`<-NULL
-    summInputSys$`integrasi1/integrasi5/alasan_005`<-NULL
-    summInputSys$`integrasi1/integrasi6/alasan_006`<-NULL
-    summInputSys$`integrasi1/integrasi6/alasan_007`<-NULL
-    summInputSys$`proses1/proses2/alasan_008`<-NULL
-    summInputSys$`proses1/proses2_001/alasan_009`<-NULL
-    summInputSys$`proses1/proses3/alasan_010`<-NULL
-    summInputSys$`proses1/proses4/alasan_011`<-NULL
-    summInputSys$`proses1/proses4_001/alasan_012`<-NULL
-
-    for (i in 13:31){
-      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 32:50){
-      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 51:52){
-      eval(parse(text=paste0("summInputSys$`datainfo1/datainfo4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 53:57){
-      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 58:63){
-      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 64:66){
-      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 67:68){
-      eval(parse(text=paste0("summInputSys$`pemantauan1/pemantauan5/alasan_0",i,"`","<-NULL")))
-    }
-
-
-    summInputSys<-as.data.frame(summInputSys)
-    summInputSys$`pemantauan1/pemantauan3/q9.2.6`[summInputSys$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
-    summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
-    summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
-    summInputSys[is.na(summInputSys)]<-3
+    summInputSys <- readRDS("data/dataSistem")
+    summInputSys$`pemantauan1/pemantauan3/q9.2.6`[is.na(summInputSys$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
+    summInputSys$`pemantauan1/pemantauan5/q9.4.1`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
+    summInputSys$`pemantauan1/pemantauan5/q9.4.2`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
     summInputSys$year <- format(as.Date(summInputSys$`provinsi/tanggal`), format = "%Y")
     # summInputSys<-filter(summInputSys,summInputSys$year==input$selectedYear)
     summInputSys<-filter(summInputSys,summInputSys$year==2019)
-
-    summSys<- as.data.frame(lapply(summInputSys[,3:(length(summInputSys)-1)], as.numeric))
-
+    
+    ##Define Indikator and Aspek###
+    aspek1 <- summInputSys %>% select(`regulasi/regulasi1/q1.1`, `regulasi/regulasi2/q1.2`)
+    aspek2 <- summInputSys %>% select(`integrasi1/integrasi2/q2.1`, `integrasi1/integrasi3/q2.2`, `integrasi1/integrasi4/q2.3`, `integrasi1/integrasi5/q2.4`)
+    indikator2.5 <- summInputSys %>% select(`integrasi1/integrasi6/q2.5.1`, `integrasi1/integrasi6/q2.5.2`)
+    aspek3 <- summInputSys  %>% select(`proses1/proses2/q3.1`, `proses1/proses2_001/q3.2`, `proses1/proses3/q3.3`, `proses1/proses4/q3.4`, `proses1/proses4_001/q3.5`)
+    indikator7.1 <- summInputSys %>% select(`datainfo1/datainfo2/q7.1.1`, `datainfo1/datainfo2/q7.1.2`, `datainfo1/datainfo2/q7.1.3`, `datainfo1/datainfo2/q7.1.4`,
+                                            `datainfo1/datainfo2/q7.1.5`, `datainfo1/datainfo2/q7.1.6`, `datainfo1/datainfo2/q7.1.7`, `datainfo1/datainfo2/q7.1.8`,
+                                            `datainfo1/datainfo2/q7.1.9`, `datainfo1/datainfo2/q7.1.10`, `datainfo1/datainfo2/q7.1.11`, `datainfo1/datainfo2/q7.1.12`,
+                                            `datainfo1/datainfo2/q7.1.13`, `datainfo1/datainfo2/q7.1.14`, `datainfo1/datainfo2/q7.1.15`, `datainfo1/datainfo2/q7.1.16`,
+                                            `datainfo1/datainfo2/q7.1.17`, `datainfo1/datainfo2/q7.1.18`, `datainfo1/datainfo2/q7.1.19`)
+    indikator7.2 <- summInputSys %>% select(`datainfo1/datainfo3/q7.2.1`, `datainfo1/datainfo3/q7.2.2`, `datainfo1/datainfo3/q7.2.3`, `datainfo1/datainfo3/q7.2.4`,
+                                            `datainfo1/datainfo3/q7.2.5`, `datainfo1/datainfo3/q7.2.6`, `datainfo1/datainfo3/q7.2.7`, `datainfo1/datainfo3/q7.2.8`,
+                                            `datainfo1/datainfo3/q7.2.9`, `datainfo1/datainfo3/q7.2.10`, `datainfo1/datainfo3/q7.2.11`, `datainfo1/datainfo3/q7.2.12`,
+                                            `datainfo1/datainfo3/q7.2.13`, `datainfo1/datainfo3/q7.2.14`, `datainfo1/datainfo3/q7.2.15`, `datainfo1/datainfo3/q7.2.16`,
+                                            `datainfo1/datainfo3/q7.2.17`, `datainfo1/datainfo3/q7.2.18`, `datainfo1/datainfo3/q7.2.19`)
+    indikator7.3 <- summInputSys %>% select(`datainfo1/datainfo4/q7.3.1`, `datainfo1/datainfo4/q7.3.2`)
+    indikator9.1 <- summInputSys %>% select(`pemantauan1/pemantauan2/q9.1.1`, `pemantauan1/pemantauan2/q9.1.2`, `pemantauan1/pemantauan2/q9.1.3`, `pemantauan1/pemantauan2/q9.1.4`,
+                                            `pemantauan1/pemantauan2/q9.1.5`)
+    indikator9.2 <- summInputSys %>% select(`pemantauan1/pemantauan3/q9.2.1`, `pemantauan1/pemantauan3/q9.2.2`, `pemantauan1/pemantauan3/q9.2.3`, `pemantauan1/pemantauan3/q9.2.4`,
+                                            `pemantauan1/pemantauan3/q9.2.5`, `pemantauan1/pemantauan3/q9.2.6`)
+    indikator9.3 <- summInputSys %>% select(`pemantauan1/pemantauan4/q9.3.1`, `pemantauan1/pemantauan4/q9.3.2`, `pemantauan1/pemantauan4/q9.3.3`)
+    indikator9.4 <- summInputSys %>% select(`pemantauan1/pemantauan5/q9.4.1`, `pemantauan1/pemantauan5/q9.4.2`)
+    
+    temp_summSys <- cbind(summInputSys$`provinsi/provinsi_001`, summInputSys$year, aspek1, aspek2, indikator2.5, aspek3, 
+                          indikator7.1, indikator7.2, indikator7.3, indikator9.1, indikator9.2, indikator9.2, indikator9.3, indikator9.4)
+    
+    summSys<- as.data.frame(lapply(temp_summSys[,3:(length(temp_summSys))], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Sistem###
     q2.5<-rowSums(summSys[,9:10]); q2.5<- as.data.frame(q2.5)/2
     q7.1 <- rowSums(summSys[,14:32]); q7.1<- as.data.frame(q7.1)/19
     q7.2 <- rowSums(summSys[,33:51]); q7.2<- as.data.frame(q7.2)/19
@@ -1042,76 +908,39 @@ server <- function(input, output, session) {
 
     #### Tabel Prioritas Tingkat Organisasi ####
     summInputOrg<-readRDS("data/dataOrganisasi")
-
-    summInputOrg$`profil/jabatan`<-NULL; summInputOrg$`meta/instanceID`<-NULL; summInputOrg$`__version__`<-NULL
-    summInputOrg$`_uuid`<-NULL; summInputOrg$`_submission_time`<-NULL; summInputOrg$`_tags`<-NULL; summInputOrg$`_notes`<-NULL
-
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan`<-NULL
-    summInputOrg$`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/alasan_001`<-NULL
-
-    for (i in 2:4){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat2/alasan_00",i,"`","<-NULL")))
-    }
-
-    for (i in 5:6){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat3/alasan_00",i,"`","<-NULL")))
-    }
-    for (i in 7:9){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat4/alasan_00",i,"`","<-NULL")))
-    }
-    summInputOrg$`perangkat1/perangkat4/alasan_010`<-NULL
-
-    for (i in 11:13){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat5/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 14:15){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat6/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 16:22){
-      eval(parse(text=paste0("summInputOrg$`perangkat1/perangkat7/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 23:29){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm2/alasan_0",i,"`","<-NULL")))
-    }
-
-    summInputOrg$`sdm1/sdm3/alasan_030`<-NULL
-    summInputOrg$`sdm1/sdm4/alasan_031`<-NULL
-
-    for (i in 32:33){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm5/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 34:35){
-      eval(parse(text=paste0("summInputOrg$`sdm1/sdm6/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 36:39){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi2/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 40:42){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi3/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 43:44){
-      eval(parse(text=paste0("summInputOrg$`teknologi1/teknologi4/alasan_0",i,"`","<-NULL")))
-    }
-    
-    summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
-
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
-    summInputOrg[summInputOrg == "n/a"]  <- NA
-    summInputOrg <- na.omit(summInputOrg)
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
+    summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
     summInputOrg<-as.data.frame(summInputOrg)
-
-    summOrg<- as.data.frame(lapply(summInputOrg[,5:length(summInputOrg)], as.numeric))
-
+    
+    ##Define Indikator###
+    indikator4.1 <- summInputOrg %>% select (`perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.1`, `perangkat1/Penentuan_Visi_Misi_dan_Tujuan/q4.1.2`)
+    indikator4.2 <- summInputOrg %>% select (`perangkat1/perangkat2/q4.2.1`, `perangkat1/perangkat2/q4.2.2`, `perangkat1/perangkat2/q4.2.3`)
+    indikator4.3 <- summInputOrg %>% select (`perangkat1/perangkat3/q4.3.1`, `perangkat1/perangkat3/q4.3.2`)
+    indikator4.4 <- summInputOrg %>% select (`perangkat1/perangkat4/q4.4.1`, `perangkat1/perangkat4/q4.4.2`, `perangkat1/perangkat4/q4.4.3`, `perangkat1/perangkat4/q4.4.4`)
+    indikator4.5 <- summInputOrg %>% select (`perangkat1/perangkat5/q4.5.1`, `perangkat1/perangkat5/q4.5.2`, `perangkat1/perangkat5/q4.5.3`)
+    indikator4.6 <- summInputOrg %>% select (`perangkat1/perangkat6/q4.6.1`, `perangkat1/perangkat6/q4.6.2`)
+    indikator4.7 <- summInputOrg %>% select (`perangkat1/perangkat7/q4.7.1`, `perangkat1/perangkat7/q4.7.2`, `perangkat1/perangkat7/q4.7.3`, `perangkat1/perangkat7/q4.7.4`,
+                                             `perangkat1/perangkat7/q4.7.5`, `perangkat1/perangkat7/q4.7.6`, `perangkat1/perangkat7/q4.7.7`)
+    indikator5.1 <- summInputOrg %>% select (`sdm1/sdm2/q5.1.1`, `sdm1/sdm2/q5.1.2`, `sdm1/sdm2/q5.1.3`, `sdm1/sdm2/q5.1.4`, `sdm1/sdm2/q5.1.5`,
+                                             `sdm1/sdm2/q5.1.6`, `sdm1/sdm2/q5.1.7`)
+    indikator5.2 <- summInputOrg %>% select (`sdm1/sdm3/q5.2`)
+    indikator5.3 <- summInputOrg %>% select (`sdm1/sdm4/q5.3`)
+    indikator5.4 <- summInputOrg %>% select (`sdm1/sdm5/q5.4.1`, `sdm1/sdm5/q5.4.2`)
+    indikator5.5 <- summInputOrg %>% select (`sdm1/sdm6/q5.5.1`, `sdm1/sdm6/q5.5.2`)
+    indikator8.1 <- summInputOrg %>% select (`teknologi1/teknologi2/q8.1.1`, `teknologi1/teknologi2/q8.1.2`, `teknologi1/teknologi2/q8.1.3`, `teknologi1/teknologi2/q8.1.4`)
+    indikator8.2 <- summInputOrg %>% select (`teknologi1/teknologi3/q8.2.1`, `teknologi1/teknologi3/q8.2.2`)
+    indikator8.3 <- summInputOrg %>% select (`teknologi1/teknologi4/q8.3.1`, `teknologi1/teknologi4/q8.3.2`)
+    
+    temp_summOrg <- cbind(summInputOrg$`profil/provinsi`, summInputOrg$`profil/institusi`, summInputOrg$`profil/nama`, summInputOrg$year, indikator4.1, indikator4.2,
+                          indikator4.3, indikator4.4, indikator4.5, indikator4.6, indikator4.7, indikator5.1, indikator5.2, indikator5.3, indikator5.4, indikator5.5,
+                          indikator8.1, indikator8.2, indikator8.3)
+    
+    summOrg<- as.data.frame(lapply(temp_summOrg[,5:length(temp_summOrg)], as.numeric))
+    
+    ##Rata-rata dari Indikator Tingkat Organisai###
     q4.1<-rowSums(summOrg[,1:2]); q4.1<-as.data.frame(q4.1)/2
     q4.2<-rowSums(summOrg[,3:5]); q4.2<-as.data.frame(q4.2)/3
     q4.3<-rowSums(summOrg[,6:7]); q4.3<-as.data.frame(q4.3)/2
@@ -1168,42 +997,36 @@ server <- function(input, output, session) {
 
     ### Tabel Prioritas Tingkat Individu ####
     summInputInd<-readRDS("data/dataIndividu")
-
-    summInputInd$`profil/gender`<-NULL; summInputInd$`profil/jabatan`<-NULL; summInputInd$`profil/akun`<-NULL; summInputInd$`profil/noHP`<-NULL; summInputInd$`profil/email`<-NULL
-    summInputInd$`meta/instanceID`<-NULL; summInputInd$`__version__`<-NULL; summInputInd$`_uuid`<-NULL; summInputInd$`_submission_time`<-NULL; summInputInd$`_tags`<-NULL; summInputInd$`_notes`<-NULL
-
-    summInputInd$`sdm_i1/sdm_i2/alasan`<-NULL
-    summInputInd$`sdm_i1/sdm_i2/alasan_001`<-NULL
-
-    for (i in 2:9){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    }
-    summInputInd$`sdm_i1/sdm_i3/alasan_010`<-NULL
-
-    for (i in 11:19){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    }
-
-    for (i in 20:22){
-      eval(parse(text=paste0("summInputInd$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    }
-    
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+    summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.11`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.11`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.12`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.12`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.13`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.13`)] <- 3
+    summInputInd$`sdm_i1/sdm_i4/q6.3.14`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.14`)] <- 3
 
-    ## Menghilangkan n/a pada data frame ##
-    summInputInd[summInputInd == "n/a"]  <- NA
-    summInputInd <- na.omit(summInputInd)
     summInputInd$year <- format(as.Date(summInputInd$`profil/tanggal`), format = "%Y")
     # summInputInd<-filter(summInputInd,summInputInd$year==input$selectedYear)
     summInputInd<-filter(summInputInd,summInputInd$year==2019)
-
-
-    summInd<- as.data.frame(lapply(summInputInd[,5:length(summInputInd)], as.numeric))
-
+    
+    indikator6.1 <- summInputInd %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+    indikator6.2 <- summInputInd %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                             `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                             `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+    indikator6.3 <- summInputInd %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                             `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                             `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                             `sdm_i1/sdm_i4/q6.3.14`)
+    indikator6.4 <- summInputInd %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
+    
+    temp_summInd <- cbind(summInputInd$`profil/provinsi`, summInputInd$`profil/nama`, summInputInd$`profil/institusi`, indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+    
+    summInd<- as.data.frame(lapply(temp_summInd[,4:length(temp_summInd)], as.numeric))
+    
     q6.1<-rowSums(summInd[,1:2]); q6.1<-as.data.frame(q6.1)/2
-    q6.2<-rowSums(summInd[,3:11]); q6.2<-as.data.frame(q6.2)/9
-    q6.3<-rowSums(summInd[,12:19]); q6.3<-as.data.frame(q6.3)/8
-    q6.4<-rowSums(summInd[,20:22]); q6.4<-as.data.frame(q6.4)/3
+    q6.2<-rowSums(summInd[,3:12]); q6.2<-as.data.frame(q6.2)/10
+    q6.3<-rowSums(summInd[,13:25]); q6.3<-as.data.frame(q6.3)/13
+    q6.4<-rowSums(summInd[,26:28]); q6.4<-as.data.frame(q6.4)/3
     valInd<-cbind(summInputInd$`profil/provinsi`,summInputInd$`profil/nama`, q6.1,q6.2,q6.3,q6.4)
     colnames(valInd)<-c("Provinsi", "Nama", "q6.1","q6.2","q6.3","q6.4" )
     summTempIndividu<-as.data.frame(valInd)
@@ -1313,8 +1136,8 @@ server <- function(input, output, session) {
     plot_ly(summary, x=~Aspek, y=~Level, type='bar', name='Level') %>%
       add_trace(y=~GAP, name='GAP') %>%
       layout(
-        yaxis = list(title='Nilai'),
-        xaxis = list(title='Aspek Penilaian'),
+        yaxis = list(title=''),
+        xaxis = list(title=''),
         barmode='stack')
   })
   ## ggplot untuk unduh hasil anlisis ##
@@ -1475,11 +1298,13 @@ server <- function(input, output, session) {
 
     # multiyearsSummary <- bind_rows(t_summarySistem, t_summaryOrganisasi, t_summaryIndividu)
     multiyearsSummary <- smartbind(t_summarySistem, t_summaryOrganisasi, t_summaryIndividu) #library(gtools)
-    roundSummary <- round(multiyearsSummary[,2:length(multiyearsSummary)], digits = 2)
-    multiyearsSummary <- cbind(multiyearsSummary$Tingkat, roundSummary)
-    colnames(multiyearsSummary)[names(multiyearsSummary)=="multiyearsSummary$Tingkat"] <- "Tingkat"
+    multiyearsSummary[,2:length(multiyearsSummary)] <- round(multiyearsSummary[,2:length(multiyearsSummary)], digits = 2)
+    # roundSummary <- round(multiyearsSummary[,2:length(multiyearsSummary)], digits = 2)
+    # temp_multiyearsSummary <- cbind(multiyearsSummary$Tingkat, roundSummary)
+    # colnames(multiyearsSummary)[names(multiyearsSummary)=="multiyearsSummary$Tingkat"] <- "Tingkat"
 
     multiyearsSummary.long <- gather(multiyearsSummary, variable, value, -Tingkat)
+    multiyearsSummary.long[,3:length(multiyearsSummary.long)] <- round(multiyearsSummary.long[,3:length(multiyearsSummary.long)], digits = 2)
     tablesCDA$multiyearsRangkuman <- multiyearsSummary.long
 
     datatable(multiyearsSummary,escape = FALSE, rownames = FALSE)
