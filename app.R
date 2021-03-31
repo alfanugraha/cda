@@ -40,25 +40,6 @@ form_sis <- 327419 #Sistem
 form_org <- 327585 #Organisasi
 form_ind <- 327418 #Individu
 
-## Sistem ##
-url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,"?format=csv")
-rawdata_sis  <- GET(url_sis,authenticate("cdna2019","Icraf2019!"),progress())
-dataSistem  <- read_csv(content(rawdata_sis,"raw",encoding = "UTF-8"))
-
-## Organisasi ##
-url_org <- paste0(kc_server_url,"api/v1/data/",form_org,"?format=csv")
-rawdata_org <- GET(url_org,authenticate("cdna2019","Icraf2019!"),progress())
-dataOrganisasi <- read_csv(content(rawdata_org,"raw",encoding = "UTF-8"))
-
-## Individu ##
-url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,"?format=csv")
-rawdata_ind <- GET(url_ind,authenticate("cdna2019","Icraf2019!"),progress())
-dataIndividu <- read_csv(content(rawdata_ind,"raw",encoding = "UTF-8"))
-
-saveRDS(dataSistem, "data/dataSistem")
-saveRDS(dataOrganisasi, "data/dataOrganisasi")
-saveRDS(dataIndividu, "data/dataIndividu")
-
 # Define UI
 ui <- fluidPage(
 
@@ -152,6 +133,23 @@ tags$style(type="text/css", ".navbar-nav {float: right; margin: 0;}")
 
 # Define server
 server <- function(input, output, session) {
+  ## Sistem ##
+  url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,"?format=csv")
+  rawdata_sis  <- GET(url_sis,authenticate("cdna2019","Icraf2019!"),progress())
+  dataSistem  <- read_csv(content(rawdata_sis,"raw",encoding = "UTF-8"))
+  
+  ## Organisasi ##
+  url_org <- paste0(kc_server_url,"api/v1/data/",form_org,"?format=csv")
+  rawdata_org <- GET(url_org,authenticate("cdna2019","Icraf2019!"),progress())
+  dataOrganisasi <- read_csv(content(rawdata_org,"raw",encoding = "UTF-8"))
+  
+  ## Individu ##
+  url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,"?format=csv")
+  rawdata_ind <- GET(url_ind,authenticate("cdna2019","Icraf2019!"),progress())
+  dataIndividu <- read_csv(content(rawdata_ind,"raw",encoding = "UTF-8"))
+  
+  koboData <- reactiveValues(sistem = dataSistem, organisasi = dataOrganisasi, individu = dataIndividu)
+  
   get_wraper <- function(width) {
     function(x) {
       lapply(strwrap(x, width = width, simplify = FALSE), paste, collapse="\n")
@@ -165,7 +163,7 @@ server <- function(input, output, session) {
 
   categoryProvince <- reactiveValues(provinsi=NULL)
   
-  # dynamic value, parse aGET query string from a URL
+  # dynamic value, parse a GET query string from a URL
   observe({
     query <- parseQueryString(session$clientData$url_search)
     if(!is.null(query$provinsi)){
@@ -187,7 +185,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Ringkasan Hasil Sistem ####
   output$resTblSys <- renderDataTable({
     
-    inputSistem <- readRDS("data/dataSistem")
+    inputSistem <- koboData$sistem
     inputSistem$`pemantauan1/pemantauan3/q9.2.6`[is.na(inputSistem$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
     inputSistem$`pemantauan1/pemantauan5/q9.4.1`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     inputSistem$`pemantauan1/pemantauan5/q9.4.2`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
@@ -318,7 +316,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Pebandingan Hasil Tahunan Sistem ####
   output$multiTableSistem<- renderDataTable({
 
-    inputSistem <- readRDS("data/dataSistem")
+    inputSistem <- koboData$sistem
     inputSistem$`pemantauan1/pemantauan3/q9.2.6`[is.na(inputSistem$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
     inputSistem$`pemantauan1/pemantauan5/q9.4.1`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     inputSistem$`pemantauan1/pemantauan5/q9.4.2`[is.na(inputSistem$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
@@ -418,7 +416,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Ringkasan Hasil Organisasi ####
   output$resTblOrgAll <- renderDataTable({
     
-    summInputOrg<-readRDS("data/dataOrganisasi")
+    summInputOrg<-koboData$organisasi
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==2019)
@@ -543,7 +541,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Pebandingan Hasil Tahunan Organisasi ####
   output$multiTableOrganisasi <- renderDataTable({
     
-    summInputOrg<-readRDS("data/dataOrganisasi")
+    summInputOrg<-koboData$organisasi
     summInputOrg$`teknologi1/teknologi3/q8.2.3` <- NULL
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     # summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
@@ -643,7 +641,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Ringkasan Hasil Inidividu ####
   output$resTblIndAll <- renderDataTable({
     
-    summInputInd<-readRDS("data/dataIndividu")
+    summInputInd<-koboData$individu
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
     summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
@@ -718,7 +716,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Pebandingan Hasil Tahunan Individu ####
   output$multiTableIndividu <- renderDataTable({
     
-    summInputInd<-readRDS("data/dataIndividu")
+    summInputInd<-koboData$individu
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
     summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
@@ -827,7 +825,7 @@ server <- function(input, output, session) {
   ### SUBMENU: Ringkasan Hasil Rangkuman ####
   output$resTblSumm <- renderDataTable({
     #### Tabel Prioritas Tingkat Sistem ####
-    summInputSys <- readRDS("data/dataSistem")
+    summInputSys <- koboData$sistem
     summInputSys$`pemantauan1/pemantauan3/q9.2.6`[is.na(summInputSys$`pemantauan1/pemantauan3/q9.2.6`)] <- 3
     summInputSys$`pemantauan1/pemantauan5/q9.4.1`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.1`)] <- 3
     summInputSys$`pemantauan1/pemantauan5/q9.4.2`[is.na(summInputSys$`pemantauan1/pemantauan5/q9.4.2`)] <- 3
@@ -908,7 +906,7 @@ server <- function(input, output, session) {
     colnames(tabelSys)<-c("Indikator","Level","Prioritas")
 
     #### Tabel Prioritas Tingkat Organisasi ####
-    summInputOrg<-readRDS("data/dataOrganisasi")
+    summInputOrg<-koboData$organisasi
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
@@ -997,7 +995,7 @@ server <- function(input, output, session) {
     colnames(tabelOrg)<-c("Indikator","Level","Prioritas")
 
     ### Tabel Prioritas Tingkat Individu ####
-    summInputInd<-readRDS("data/dataIndividu")
+    summInputInd<-koboData$individu
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
     summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3

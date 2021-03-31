@@ -36,25 +36,6 @@ form_sis <- 327419 #Sistem
 form_org <- 327585 #Organisasi
 form_ind <- 327418 #Individu
 
-## Sistem ##
-url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,"?format=csv")
-rawdata_sis  <- GET(url_sis,authenticate("cdna2019","Icraf2019!"),progress())
-dataSistem  <- read_csv(content(rawdata_sis,"raw",encoding = "UTF-8"))
-
-## Organisasi ##
-url_org <- paste0(kc_server_url,"api/v1/data/",form_org,"?format=csv")
-rawdata_org <- GET(url_org,authenticate("cdna2019","Icraf2019!"),progress())
-dataOrganisasi <- read_csv(content(rawdata_org,"raw",encoding = "UTF-8"))
-
-## Individu ##
-url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,"?format=csv")
-rawdata_ind <- GET(url_ind,authenticate("cdna2019","Icraf2019!"),progress())
-dataIndividu <- read_csv(content(rawdata_ind,"raw",encoding = "UTF-8"))
-
-saveRDS(dataSistem, "data/dataSistem")
-saveRDS(dataOrganisasi, "data/dataOrganisasi")
-saveRDS(dataIndividu, "data/dataIndividu")
-
 # Define UI
 ui <- fluidPage(
   
@@ -78,10 +59,27 @@ server <- function(input, output, session) {
   final_chart <- reactiveValues(chartSistem=NULL, chartOrganisasi=NULL, chartIndividu=NULL, chartSummary=NULL)
   graph_data <- reactiveValues(provInd=NULL, provOrg=NULL, graphSistem=NULL, chartSummary=NULL)
   
+  ## Sistem ##
+  url_sis <- paste0(kc_server_url,"api/v1/data/",form_sis,"?format=csv")
+  rawdata_sis  <- GET(url_sis,authenticate("cdna2019","Icraf2019!"),progress())
+  dataSistem  <- read_csv(content(rawdata_sis,"raw",encoding = "UTF-8"))
+  
+  ## Organisasi ##
+  url_org <- paste0(kc_server_url,"api/v1/data/",form_org,"?format=csv")
+  rawdata_org <- GET(url_org,authenticate("cdna2019","Icraf2019!"),progress())
+  dataOrganisasi <- read_csv(content(rawdata_org,"raw",encoding = "UTF-8"))
+  
+  ## Individu ##
+  url_ind <- paste0(kc_server_url,"api/v1/data/",form_ind,"?format=csv")
+  rawdata_ind <- GET(url_ind,authenticate("cdna2019","Icraf2019!"),progress())
+  dataIndividu <- read_csv(content(rawdata_ind,"raw",encoding = "UTF-8"))
+  
+  koboData <- reactiveValues(sistem = dataSistem, organisasi = dataOrganisasi, individu = dataIndividu)
+  
   output$grafikNasional <- renderPlotly({
     ### TINGKAT SISTEM ####
     
-    summInputSys <- readRDS("data/dataSistem")
+    summInputSys <- koboData$sistem
     # summInputSys$`pemantauan1/pemantauan3/q9.2.6`[summInputSys$`pemantauan1/pemantauan3/q9.2.6` == "n/a"]  <- NA
     # summInputSys$`pemantauan1/pemantauan5/q9.4.1`[summInputSys$`pemantauan1/pemantauan5/q9.4.1` == "n/a"]  <- NA
     # summInputSys$`pemantauan1/pemantauan5/q9.4.2`[summInputSys$`pemantauan1/pemantauan5/q9.4.2` == "n/a"]  <- NA
@@ -147,7 +145,7 @@ server <- function(input, output, session) {
     
     ### TINGKAT ORGANISASI ####
     
-    summInputOrg<-readRDS("data/dataOrganisasi")
+    summInputOrg<-koboData$organisasi
     summInputOrg$`perangkat1/perangkat4/q4.4.3`[summInputOrg$`perangkat1/perangkat4/q4.4.3` == "n/a"]  <- 3
     summInputOrg$year <- format(as.Date(summInputOrg$`profil/tanggal`), format = "%Y")
     summInputOrg<-filter(summInputOrg,summInputOrg$year==input$selectedYear)
@@ -213,7 +211,7 @@ server <- function(input, output, session) {
     
     ### TINGKAT INDIVIDU ####
     
-    summInputInd<-readRDS("data/dataIndividu")
+    summInputInd<-koboData$individu
     summInputInd$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     summInputInd$`sdm_i1/sdm_i3/q6.2.10`[is.na(summInputInd$`sdm_i1/sdm_i3/q6.2.10`)] <- 3
     summInputInd$`sdm_i1/sdm_i4/q6.3.10`[is.na(summInputInd$`sdm_i1/sdm_i4/q6.3.10`)] <- 3
