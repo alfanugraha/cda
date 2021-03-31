@@ -25,22 +25,7 @@ library(readr)
 kobo_server_url <- "https://kf.kobotoolbox.org/"
 kc_server_url <- "https://kc.kobotoolbox.org/"
 
-# form_moodle <- 612594 #Individu
-form_moodle_merger <- 327418 #Individu
-
-## Individu ##
-# url_moodle<- paste0(kc_server_url,"api/v1/data/",form_moodle,"?format=csv")
-# rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
-# dataMoodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
-# 
-# saveRDS(dataMoodle, "data/dataMoodle")
-
-## Individu Gabungan##
-url_moodle_merger<- paste0(kc_server_url,"api/v1/data/",form_moodle_merger,"?format=csv")
-rawdata_moodle_merger <- GET(url_moodle_merger,authenticate("cdna2019","Icraf2019!"),progress())
-dataMoodle_merger <- read_csv(content(rawdata_moodle_merger,"raw",encoding = "UTF-8"))
-
-saveRDS(dataMoodle_merger, "data/dataMoodle_merger")
+form_moodle <- 327418 #Individu
 
 # Define UI
 ui <- fluidPage(
@@ -51,7 +36,8 @@ ui <- fluidPage(
   navbarPage("", theme = shinytheme("lumen"),
              tabPanel("E-learning AKSARA", fluid = TRUE, icon = icon("globe"),
                       # tags$style(button_color_css),
-                      selectInput("selectedUser", label="Nama Pengguna", choices = c("Admin 1", "Kontributor 1", "Kontributor 2",  "Kontributor 3", "Kontributor 4","Kontributor 5", "Umum 1", "Umum 2", "Umum 3")),
+                      # selectInput("selectedUser", label="Nama Pengguna", choices = c("Admin 1", "Kontributor 1", "Kontributor 2",  "Kontributor 3", "Kontributor 4","Kontributor 5", "Umum 1", "Umum 2", "Umum 3")),
+                      textInput("userEmail", label="Email Pengguna"),
                       h2("Nilai Individu"),
                       withSpinner(dataTableOutput("valueTable")),
                       br(),
@@ -65,43 +51,28 @@ ui <- fluidPage(
 
 # Define server
 server <- function(input, output, session) {
+  ## Individu ##
+  url_moodle<- paste0(kc_server_url,"api/v1/data/",form_moodle,"?format=csv")
+  rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
+  metadata_moodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
+  
+  koboData <- reactiveValues(rekomendasi = metadata_moodle)
+
+  saveRDS(metadata_moodle, "data/dataMoodle")
+  
   data <- reactiveValues(maindata=data.frame())
   
   output$valueTable <- renderDataTable({
     # tempData <-readRDS("data/dataMoodle")
-    tempData <- readRDS("data/dataMoodle_merger")
-    
-    # tempData$`profil/gender` <- NULL; tempData$`profil/nama` <- NULL; tempData$`profil/provinsi` <- NULL; tempData$`profil/tanggal` <- NULL; tempData$`profil/institusi` <- NULL; tempData$`profil/noHP` <- NULL; tempData$`profil/email` <- NULL
-    # tempData$`meta/instanceID`<-NULL; tempData$`__version__`<-NULL; tempData$`_uuid`<-NULL; tempData$`_submission_time`<-NULL; tempData$`_tags`<-NULL; tempData$`_notes`<-NULL; tempData$`_version_`<-NULL; tempData$`_validation_status`<-NULL
-    # 
-    # tempData$`sdm_i1/sdm_i2/alasan` <- NULL; tempData$`sdm_i1/sdm_i2/alasan_001` <- NULL
-    # 
-    # for (i in 2:9){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    # }
-    # for (i in 10:11){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_0",i,"`","<-NULL")))
-    # }
-    # 
-    # for (i in 12:25){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    # }
-    # 
-    # for (i in 26:28){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    # }
-    
+    tempData <- koboData$rekomendasi
     tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     
-    # tempData[tempData == "n/a"]  <- NA
     tempData <- as.data.frame(tempData)
-    tempData$nama <- c("Admin 1", "Kontributor 1", "Kontributor 2", "Kontributor 3","Umum 1","Kontributor 4", "Umum 2", "Umum 3", "Kontributor 5")
     data$maindata <- tempData
     
     namaKolom = colnames(tempData[1:length(tempData)])
-    filterData <- tempData[which(tempData$nama == input$selectedUser), names(tempData) %in% namaKolom]
-    # selectedUser <- "Admin 1"
-    # filterData <- tempData[which(tempData$nama == selectedUser), names(tempData) %in% namaKolom]
+    # filterData <- tempData[which(tempData$`profil/email` == "a.nugraha@cgiar.org"), names(tempData) %in% namaKolom]
+    filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
     metadata <- cbind(tempData$`profil/email`,
                       tempData$`profil/nama`,
                       tempData$`profil/gender`,
@@ -113,8 +84,20 @@ server <- function(input, output, session) {
                       tempData$`profil/tanggal`) 
     colnames(metadata) <- c("Email", "Nama", "Gender", "Kategori Pengguna", "Sektor", "Subsektor Energi", "Subsektor Lahan", "Subsektor Limbah", "Tanggal")
     
-    # temp_numData <- cbind()
-    numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
+    indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+    indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                             `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                             `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+    indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                             `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                             `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                             `sdm_i1/sdm_i4/q6.3.14`)
+    indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
+    
+    temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
+                          filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
+                          indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+    numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
     
     #Kesesuaian peran
     kategori1<-rowSums(numData[,1:2]); kategori1<-as.data.frame(kategori1)/2
@@ -139,35 +122,24 @@ server <- function(input, output, session) {
   
   output$recommendationTable <- renderDataTable({
     tempData <- data$maindata
-    # tempData <-readRDS("data/dataMoodle")
-    # 
-    # tempData$`profil/gender` <- NULL; tempData$`profil/nama` <- NULL; tempData$`profil/provinsi` <- NULL; tempData$`profil/tanggal` <- NULL; tempData$`profil/institusi` <- NULL; tempData$`profil/noHP` <- NULL; tempData$`profil/email` <- NULL
-    # tempData$`meta/instanceID`<-NULL; tempData$`__version__`<-NULL; tempData$`_uuid`<-NULL; tempData$`_submission_time`<-NULL; tempData$`_tags`<-NULL; tempData$`_notes`<-NULL; tempData$`_version_`<-NULL; tempData$`_validation_status`<-NULL
-    # 
-    # tempData$`sdm_i1/sdm_i2/alasan` <- NULL; tempData$`sdm_i1/sdm_i2/alasan_001` <- NULL
-    # 
-    # for (i in 2:9){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_00",i,"`","<-NULL")))
-    # }
-    # for (i in 10:11){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i3/alasan_0",i,"`","<-NULL")))
-    # }
-    # 
-    # for (i in 12:25){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i4/alasan_0",i,"`","<-NULL")))
-    # }
-    # 
-    # for (i in 26:28){
-    #   eval(parse(text=paste0("tempData$`sdm_i1/sdm_i5/alasan_0",i,"`","<-NULL")))
-    # }
-    # 
-    # tempData[tempData == "n/a"]  <- NA
-    # tempData <- as.data.frame(tempData)
-    # tempData$nama <- c("Admin 1", "Kontributor 1", "Kontributor 2", "Umum 1", "Kontributor 3", "Umum 2", "Umum 3", "Kontributor 4")
     namaKolom = colnames(tempData[1:length(tempData)])
-    filterData <- tempData[which(tempData$nama == input$selectedUser), names(tempData) %in% namaKolom]
+    # filterData <- tempData[which(tempData$`profil/email` == "a.nugraha@cgiar.org"), names(tempData) %in% namaKolom]
+    filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
+  
+    indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+    indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                           `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                           `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+    indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                           `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                           `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                           `sdm_i1/sdm_i4/q6.3.14`)
+    indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
     
-    numData<- as.data.frame(lapply(filterData[,6:(length(filterData)-1)], as.numeric))
+    temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
+                          filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
+                          indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+    numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
     
     rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2)/2
     rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5
