@@ -37,12 +37,16 @@ ui <- fluidPage(
              tabPanel("E-learning AKSARA", fluid = TRUE, icon = icon("globe"),
                       # tags$style(button_color_css),
                       # selectInput("selectedUser", label="Nama Pengguna", choices = c("Admin 1", "Kontributor 1", "Kontributor 2",  "Kontributor 3", "Kontributor 4","Kontributor 5", "Umum 1", "Umum 2", "Umum 3")),
-                      textInput("userEmail", label="Email Pengguna"),
-                      h2("Nilai Individu"),
-                      withSpinner(dataTableOutput("valueTable")),
+                      textInput("userEmail", "Email Pengguna"),
+                      actionButton("showButton", "Tampilkan"),
+                      hr(),
+                      h2(textOutput("titleTable1")),
+                      # withSpinner(dataTableOutput("valueTable")),
+                      dataTableOutput("valueTable"),
                       br(),
-                      h2("Tabel Rekomendasi E-Learning"),
-                      withSpinner(dataTableOutput("recommendationTable"))
+                      h2(textOutput("titleTable2")),
+                      # withSpinner(dataTableOutput("recommendationTable")),
+                      dataTableOutput("recommendationTable")
                       # downloadButton('downloadResults', 'Unduh Hasil', style="color: #fff; background-color: #00a65a; border-color: #008d4c")
              )
   ),
@@ -57,247 +61,238 @@ server <- function(input, output, session) {
   metadata_moodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
   
   koboData <- reactiveValues(rekomendasi = metadata_moodle)
-
-  saveRDS(metadata_moodle, "data/dataMoodle")
-  
   data <- reactiveValues(maindata=data.frame())
   
-  output$valueTable <- renderDataTable({
-    # tempData <-readRDS("data/dataMoodle")
-    tempData <- koboData$rekomendasi
-    tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+  observeEvent(input$showButton,{
+    output$titleTable1 <- renderText({ paste0("Nilai Individu") })
+    output$titleTable2 <- renderText({ paste0("Tabel Rekomendasi Modul E-Learning") })
+  
+    output$valueTable <- renderDataTable({
+      tempData <-readRDS("data/dataMoodle")
+      tempData <- koboData$rekomendasi
+      tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
+      
+      tempData <- as.data.frame(tempData[129:nrow(tempData),])
+      data$maindata <- tempData
+      
+      namaKolom = colnames(tempData[1:length(tempData)])
+      # filterData <- tempData[which(tempData$`profil/email` == "y.karimah@cgiar.org"), names(tempData) %in% namaKolom]
+      filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
+
+      indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+      indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+                                               `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
+                                               `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
+      indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+                                               `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
+                                               `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
+                                               `sdm_i1/sdm_i4/q6.3.14`)
+      indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
+      
+      temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
+                            filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
+                            indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+      numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
+      
+      #Kesesuaian peran
+      kategori1<-rowSums(numData[,1:2]); kategori1<-as.data.frame(kategori1)/2
+      
+      #Pengetahuan
+      kategori2<-rowSums(numData[,3:12]); kategori2<-as.data.frame(kategori2)/10
+      
+      #Keterampilan
+      kategori3<-rowSums(numData[,13:25]); kategori3<-as.data.frame(kategori3)/13
+      
+      #Pengembangan dan Motivasi
+      kategori4<-rowSums(numData[,26:28]); kategori4<-as.data.frame(kategori4)/3
+      
+      graphData <- cbind(kategori1, kategori2, kategori3, kategori4)
+      t_graphData <- as.data.frame(cbind(V1=c("Kesesuaian Peran dalam Implementasi RAD FRK/PPRKD dengan Tugas", "Pengetahuan", "Keterampilan", "Pengembangan dan Motivasi"),t(graphData)))
+      colnames(t_graphData) <- c("Kategori", "Nilai")
+      rownames(t_graphData) <- 1:nrow(t_graphData)
+      
+      datatable(t_graphData,escape = FALSE, rownames = FALSE, options = list(dom='ti')) %>%
+        formatRound(columns='Nilai', digits=2)
+    })
     
-    tempData <- as.data.frame(tempData)
-    data$maindata <- tempData
+    output$recommendationTable <- renderDataTable({
+      tempData <- data$maindata
+      namaKolom = colnames(tempData[1:length(tempData)])
+      # filterData <- tempData[which(tempData$`profil/email` == "y.karimah@cgiar.org"), names(tempData) %in% namaKolom]
+      filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
     
-    namaKolom = colnames(tempData[1:length(tempData)])
-    # filterData <- tempData[which(tempData$`profil/email` == "a.nugraha@cgiar.org"), names(tempData) %in% namaKolom]
-    filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
-    metadata <- cbind(tempData$`profil/email`,
-                      tempData$`profil/nama`,
-                      tempData$`profil/gender`,
-                      tempData$`profil/id`,
-                      tempData$`profil/sektor`,
-                      tempData$`profil/subsektor`, #Energi
-                      tempData$`profil/subsektor_001`, #Lahan
-                      tempData$`profil/subsektor_002`, #Limbah
-                      tempData$`profil/tanggal`) 
-    colnames(metadata) <- c("Email", "Nama", "Gender", "Kategori Pengguna", "Sektor", "Subsektor Energi", "Subsektor Lahan", "Subsektor Limbah", "Tanggal")
-    
-    indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
-    indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
+      indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
+      indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
                                              `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
                                              `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
-    indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
+      indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
                                              `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
                                              `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
                                              `sdm_i1/sdm_i4/q6.3.14`)
-    indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
-    
-    temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
-                          filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
-                          indikator6.1, indikator6.2, indikator6.3, indikator6.4)
-    numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
-    
-    #Kesesuaian peran
-    kategori1<-rowSums(numData[,1:2]); kategori1<-as.data.frame(kategori1)/2
-    
-    #Pengetahuan
-    kategori2<-rowSums(numData[,3:12]); kategori2<-as.data.frame(kategori2)/10
-    
-    #Keterampilan
-    kategori3<-rowSums(numData[,13:25]); kategori3<-as.data.frame(kategori3)/13
-    
-    #Pengembangan dan Motivasi
-    kategori4<-rowSums(numData[,26:28]); kategori4<-as.data.frame(kategori4)/3
-    
-    graphData <- cbind(kategori1, kategori2, kategori3, kategori4)
-    t_graphData <- as.data.frame(cbind(V1=c("Kesesuaian Peran dalam Implementasi RAD FRK/PPRKD dengan Tugas", "Pengetahuan", "Keterampilan", "Pengembangan dan Motivasi"),t(graphData)))
-    colnames(t_graphData) <- c("Kategori", "Nilai")
-    rownames(t_graphData) <- 1:nrow(t_graphData)
-    
-    datatable(t_graphData,escape = FALSE, rownames = FALSE, options = list(dom='ti')) %>%
-      formatRound(columns='Nilai', digits=2)
-  })
-  
-  output$recommendationTable <- renderDataTable({
-    tempData <- data$maindata
-    namaKolom = colnames(tempData[1:length(tempData)])
-    # filterData <- tempData[which(tempData$`profil/email` == "a.nugraha@cgiar.org"), names(tempData) %in% namaKolom]
-    filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
-  
-    indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
-    indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
-                                           `sdm_i1/sdm_i3/q6.2.5`, `sdm_i1/sdm_i3/q6.2.6`, `sdm_i1/sdm_i3/q6.2.7`, `sdm_i1/sdm_i3/q6.2.8`,
-                                           `sdm_i1/sdm_i3/q6.2.9`, `sdm_i1/sdm_i3/q6.2.10`)
-    indikator6.3 <- filterData %>% select (`sdm_i1/sdm_i4/q6.3.1`, `sdm_i1/sdm_i4/q6.3.2`, `sdm_i1/sdm_i4/q6.3.3`,`sdm_i1/sdm_i4/q6.3.4`,
-                                           `sdm_i1/sdm_i4/q6.3.5`, `sdm_i1/sdm_i4/q6.3.6`, `sdm_i1/sdm_i4/q6.3.8`, `sdm_i1/sdm_i4/q6.3.9`,
-                                           `sdm_i1/sdm_i4/q6.3.10`, `sdm_i1/sdm_i4/q6.3.11`, `sdm_i1/sdm_i4/q6.3.12`, `sdm_i1/sdm_i4/q6.3.13`,
-                                           `sdm_i1/sdm_i4/q6.3.14`)
-    indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
-    
-    temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
-                          filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
-                          indikator6.1, indikator6.2, indikator6.3, indikator6.4)
-    numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
-    
-    rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2)/2
-    rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5
-    rekomenPPRKN <- numData$sdm_i1.sdm_i3.q6.2.6
-    rekomenCDNA <- numData$sdm_i1.sdm_i3.q6.2.7
-    rekomenPengantar <- numData$sdm_i1.sdm_i3.q6.2.7
-    rekomenEkonomi <- (numData$sdm_i1.sdm_i3.q6.2.7 + numData$sdm_i1.sdm_i3.q6.2.8 + numData$sdm_i1.sdm_i4.q6.3.4)/3
-    rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
-    rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
-    rekomenSatLahan <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.2 + numData$sdm_i1.sdm_i4.q6.3.5)/3
-    rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6)/2
-    rekomenIntervensi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.8 + numData$sdm_i1.sdm_i4.q6.3.9)/3
-    rekomenTradeoff <- (numData$sdm_i1.sdm_i4.q6.3.10 + numData$sdm_i1.sdm_i4.q6.3.11)/2
-    rekomenHutan <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-    rekomenTani <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-    rekomenEnergi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-    rekomenTransportasi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-    rekomenLimbah <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-    rekomenAplikasi <- (numData$sdm_i1.sdm_i3.q6.2.10 + numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/3
-    rekomenKontributor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
-    rekomenAdmin <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
-    rekomenEditor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
-    
-    if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==1){
+      indikator6.4 <- filterData %>% select (`sdm_i1/sdm_i5/q6.4.1`, `sdm_i1/sdm_i5/q6.4.2`, `sdm_i1/sdm_i5/q6.4.3`)
       
-      modulEnergi <- read_excel("init/modul.xlsx", sheet = "Energi")
-      nilaiEnergi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenEnergi, rekomenAplikasi, rekomenKontributor))
-      tabelEnergi <- cbind(modulEnergi, nilaiEnergi)
-      tabelEnergi <- cbind(Kursus = rownames(tabelEnergi), tabelEnergi)
-      colnames(tabelEnergi) <- c("ID", "Modul", "Nilai")
-      rownames(tabelEnergi) <- 1:nrow(tabelEnergi)
-      tabelEnergi$Rekomendasi <- "Tidak ada rekomendasi"
+      temp_numData <- cbind(filterData$`profil/email`,filterData$`profil/provinsi`, filterData$`profil/sektor`,filterData$`profil/subsektor`, 
+                            filterData$`profil/subsektor_001`, filterData$`profil/subsektor_002`, filterData$`profil/tanggal`,
+                            indikator6.1, indikator6.2, indikator6.3, indikator6.4)
+      numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
       
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelEnergi)){
-        eval(parse(text=paste0("tabelEnergi <- within(tabelEnergi, {Rekomendasi<-ifelse(ID=='", as.character(tabelEnergi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+      rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2)/2
+      rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5
+      rekomenPPRKN <- numData$sdm_i1.sdm_i3.q6.2.6
+      rekomenCDNA <- numData$sdm_i1.sdm_i3.q6.2.7
+      rekomenPengantar <- numData$sdm_i1.sdm_i3.q6.2.7
+      rekomenEkonomi <- (numData$sdm_i1.sdm_i3.q6.2.7 + numData$sdm_i1.sdm_i3.q6.2.8 + numData$sdm_i1.sdm_i4.q6.3.4)/3
+      rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
+      rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
+      rekomenSatLahan <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.2 + numData$sdm_i1.sdm_i4.q6.3.5)/3
+      rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6)/2
+      rekomenIntervensi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.8 + numData$sdm_i1.sdm_i4.q6.3.9)/3
+      rekomenTradeoff <- (numData$sdm_i1.sdm_i4.q6.3.10 + numData$sdm_i1.sdm_i4.q6.3.11)/2
+      rekomenHutan <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
+      rekomenTani <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
+      rekomenEnergi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
+      rekomenTransportasi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
+      rekomenLimbah <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
+      rekomenAplikasi <- (numData$sdm_i1.sdm_i3.q6.2.10 + numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/3
+      rekomenKontributor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
+      rekomenAdmin <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
+      rekomenEditor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
+      
+      if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==1){
+        
+        modulEnergi <- read_excel("init/modul.xlsx", sheet = "Energi")
+        nilaiEnergi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenEnergi, rekomenAplikasi, rekomenKontributor))
+        tabelEnergi <- cbind(modulEnergi, nilaiEnergi)
+        tabelEnergi <- cbind(Kursus = rownames(tabelEnergi), tabelEnergi)
+        colnames(tabelEnergi) <- c("ID", "Modul", "Nilai")
+        rownames(tabelEnergi) <- 1:nrow(tabelEnergi)
+        tabelEnergi$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelEnergi)){
+          eval(parse(text=paste0("tabelEnergi <- within(tabelEnergi, {Rekomendasi<-ifelse(ID=='", as.character(tabelEnergi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelEnergi$ID <- NULL
+        tabelEnergi$Nilai <- NULL
+        datatable(tabelEnergi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==2) {
+        
+        modulTransportasi <- read_excel("init/modul.xlsx", sheet = "Energi_Trans")
+        nilaiTransportasi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTransportasi, rekomenAplikasi, rekomenKontributor))
+        tabelTransportasi <- cbind(modulTransportasi, nilaiTransportasi)
+        tabelTransportasi <- cbind(Kursus = rownames(tabelTransportasi), tabelTransportasi)
+        colnames(tabelTransportasi) <- c("ID", "Modul", "Nilai")
+        rownames(tabelTransportasi) <- 1:nrow(tabelTransportasi)
+        tabelTransportasi$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelTransportasi)){
+          eval(parse(text=paste0("tabelTransportasi <- within(tabelTransportasi, {Rekomendasi<-ifelse(ID=='", as.character(tabelTransportasi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelTransportasi$ID <- NULL
+        tabelTransportasi$Nilai <- NULL
+        datatable(tabelTransportasi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==1) {
+        
+        modulHutan<- read_excel("init/modul.xlsx", sheet = "Lahan_Hutan")
+        nilaiHutan <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenHutan, rekomenAplikasi, rekomenKontributor))
+        tabelHutan <- cbind(modulHutan, nilaiHutan)
+        tabelHutan <- cbind(Kursus = rownames(tabelHutan), tabelHutan)
+        colnames(tabelHutan) <- c("ID", "Modul", "Nilai")
+        rownames(tabelHutan) <- 1:nrow(tabelHutan)
+        tabelHutan$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelHutan)){
+          eval(parse(text=paste0("tabelHutan <- within(tabelHutan, {Rekomendasi<-ifelse(ID=='", as.character(tabelHutan$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelHutan$ID <- NULL
+        tabelHutan$Nilai <- NULL
+        datatable(tabelHutan, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==2) {
+        
+        modulTani<- read_excel("init/modul.xlsx", sheet = "Lahan_Tani")
+        nilaiTani <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTani, rekomenAplikasi, rekomenKontributor))
+        tabelTani <- cbind(modulTani, nilaiTani)
+        tabelTani <- cbind(Kursus = rownames(tabelTani), tabelTani)
+        colnames(tabelTani) <- c("ID", "Modul", "Nilai")
+        rownames(tabelTani) <- 1:nrow(tabelTani)
+        tabelTani$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelTani)){
+          eval(parse(text=paste0("tabelTani <- within(tabelTani, {Rekomendasi<-ifelse(ID=='", as.character(tabelTani$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelTani$ID <- NULL
+        tabelTani$Nilai <- NULL
+        datatable(tabelTani, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==3 & filterData$`profil/subsektor_002`==1) {
+        
+        modulLimbah<- read_excel("init/modul.xlsx", sheet = "Limbah")
+        nilaiLimbah <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLimbah, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenLimbah, rekomenAplikasi, rekomenKontributor))
+        tabelLimbah <- cbind(modulLimbah, nilaiLimbah)
+        tabelLimbah <- cbind(Kursus = rownames(tabelLimbah), tabelLimbah)
+        colnames(tabelLimbah) <- c("ID", "Modul", "Nilai")
+        rownames(tabelLimbah) <- 1:nrow(tabelLimbah)
+        tabelLimbah$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelLimbah)){
+          eval(parse(text=paste0("tabelLimbah <- within(tabelLimbah, {Rekomendasi<-ifelse(ID=='", as.character(tabelLimbah$ID[i]) , "' & Nilai<3, 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelLimbah$ID <- NULL
+        tabelLimbah$Nilai <- NULL
+        datatable(tabelLimbah, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else if (filterData$`profil/id`==1) {
+        
+        modulAdmin<- read_excel("init/modul.xlsx", sheet = "Admin")
+        nilaiAdmin <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenAdmin))
+        tabelAdmin <- cbind(modulAdmin, nilaiAdmin)
+        tabelAdmin <- cbind(Kursus = rownames(tabelAdmin), tabelAdmin)
+        colnames(tabelAdmin) <- c("ID", "Modul", "Nilai")
+        rownames(tabelAdmin) <- 1:nrow(tabelAdmin)
+        tabelAdmin$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelAdmin)){
+          eval(parse(text=paste0("tabelAdmin <- within(tabelAdmin, {Rekomendasi<-ifelse(ID=='", as.character(tabelAdmin$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelAdmin$ID <- NULL
+        tabelAdmin$Nilai <- NULL
+        datatable(tabelAdmin, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
+      } else {
+        
+        modulEditor<- read_excel("init/modul.xlsx", sheet = "Editor")
+        nilaiEditor <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenEditor))
+        tabelEditor <- cbind(modulEditor, nilaiEditor)
+        tabelEditor <- cbind(Kursus = rownames(tabelEditor), tabelEditor)
+        colnames(tabelEditor) <- c("ID", "Modul", "Nilai")
+        rownames(tabelEditor) <- 1:nrow(tabelEditor)
+        tabelEditor$Rekomendasi <- "Tidak ada rekomendasi"
+        
+        ###Define the recommendation of each indicator####
+        for (i in 1:nrow(tabelEditor)){
+          eval(parse(text=paste0("tabelEditor <- within(tabelEditor, {Rekomendasi<-ifelse(ID=='", as.character(tabelEditor$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
+        }
+        
+        tabelEditor$ID <- NULL
+        tabelEditor$Nilai <- NULL
+        datatable(tabelEditor, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+        
       }
-      
-      tabelEnergi$ID <- NULL
-      tabelEnergi$Nilai <- NULL
-      datatable(tabelEnergi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==2) {
-      
-      modulTransportasi <- read_excel("init/modul.xlsx", sheet = "Energi_Trans")
-      nilaiTransportasi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTransportasi, rekomenAplikasi, rekomenKontributor))
-      tabelTransportasi <- cbind(modulTransportasi, nilaiTransportasi)
-      tabelTransportasi <- cbind(Kursus = rownames(tabelTransportasi), tabelTransportasi)
-      colnames(tabelTransportasi) <- c("ID", "Modul", "Nilai")
-      rownames(tabelTransportasi) <- 1:nrow(tabelTransportasi)
-      tabelTransportasi$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelTransportasi)){
-        eval(parse(text=paste0("tabelTransportasi <- within(tabelTransportasi, {Rekomendasi<-ifelse(ID=='", as.character(tabelTransportasi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelTransportasi$ID <- NULL
-      tabelTransportasi$Nilai <- NULL
-      datatable(tabelTransportasi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==1) {
-      
-      modulHutan<- read_excel("init/modul.xlsx", sheet = "Lahan_Hutan")
-      nilaiHutan <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenHutan, rekomenAplikasi, rekomenKontributor))
-      tabelHutan <- cbind(modulHutan, nilaiHutan)
-      tabelHutan <- cbind(Kursus = rownames(tabelHutan), tabelHutan)
-      colnames(tabelHutan) <- c("ID", "Modul", "Nilai")
-      rownames(tabelHutan) <- 1:nrow(tabelHutan)
-      tabelHutan$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelHutan)){
-        eval(parse(text=paste0("tabelHutan <- within(tabelHutan, {Rekomendasi<-ifelse(ID=='", as.character(tabelHutan$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelHutan$ID <- NULL
-      tabelHutan$Nilai <- NULL
-      datatable(tabelHutan, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==2) {
-      
-      modulTani<- read_excel("init/modul.xlsx", sheet = "Lahan_Tani")
-      nilaiTani <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTani, rekomenAplikasi, rekomenKontributor))
-      tabelTani <- cbind(modulTani, nilaiTani)
-      tabelTani <- cbind(Kursus = rownames(tabelTani), tabelTani)
-      colnames(tabelTani) <- c("ID", "Modul", "Nilai")
-      rownames(tabelTani) <- 1:nrow(tabelTani)
-      tabelTani$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelTani)){
-        eval(parse(text=paste0("tabelTani <- within(tabelTani, {Rekomendasi<-ifelse(ID=='", as.character(tabelTani$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelTani$ID <- NULL
-      tabelTani$Nilai <- NULL
-      datatable(tabelTani, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==3 & filterData$`profil/subsektor_002`==1) {
-      
-      modulLimbah<- read_excel("init/modul.xlsx", sheet = "Limbah")
-      nilaiLimbah <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLimbah, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenLimbah, rekomenAplikasi, rekomenKontributor))
-      tabelLimbah <- cbind(modulLimbah, nilaiLimbah)
-      tabelLimbah <- cbind(Kursus = rownames(tabelLimbah), tabelLimbah)
-      colnames(tabelLimbah) <- c("ID", "Modul", "Nilai")
-      rownames(tabelLimbah) <- 1:nrow(tabelLimbah)
-      tabelLimbah$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelLimbah)){
-        eval(parse(text=paste0("tabelLimbah <- within(tabelLimbah, {Rekomendasi<-ifelse(ID=='", as.character(tabelLimbah$ID[i]) , "' & Nilai<3, 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelLimbah$ID <- NULL
-      tabelLimbah$Nilai <- NULL
-      datatable(tabelLimbah, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==1) {
-      
-      modulAdmin<- read_excel("init/modul.xlsx", sheet = "Admin")
-      nilaiAdmin <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenAdmin))
-      tabelAdmin <- cbind(modulAdmin, nilaiAdmin)
-      tabelAdmin <- cbind(Kursus = rownames(tabelAdmin), tabelAdmin)
-      colnames(tabelAdmin) <- c("ID", "Modul", "Nilai")
-      rownames(tabelAdmin) <- 1:nrow(tabelAdmin)
-      tabelAdmin$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelAdmin)){
-        eval(parse(text=paste0("tabelAdmin <- within(tabelAdmin, {Rekomendasi<-ifelse(ID=='", as.character(tabelAdmin$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelAdmin$ID <- NULL
-      tabelAdmin$Nilai <- NULL
-      datatable(tabelAdmin, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else {
-      
-      modulEditor<- read_excel("init/modul.xlsx", sheet = "Editor")
-      nilaiEditor <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenEditor))
-      tabelEditor <- cbind(modulEditor, nilaiEditor)
-      tabelEditor <- cbind(Kursus = rownames(tabelEditor), tabelEditor)
-      colnames(tabelEditor) <- c("ID", "Modul", "Nilai")
-      rownames(tabelEditor) <- 1:nrow(tabelEditor)
-      tabelEditor$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelEditor)){
-        eval(parse(text=paste0("tabelEditor <- within(tabelEditor, {Rekomendasi<-ifelse(ID=='", as.character(tabelEditor$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelEditor$ID <- NULL
-      tabelEditor$Nilai <- NULL
-      datatable(tabelEditor, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    }
-    
+    })
   })
 }
 
