@@ -68,7 +68,7 @@ server <- function(input, output, session) {
     output$titleTable2 <- renderText({ paste0("Tabel Rekomendasi Modul E-Learning") })
   
     output$valueTable <- renderDataTable({
-      tempData <-readRDS("data/dataMoodle")
+      # tempData <-readRDS("data/dataMoodle")
       tempData <- koboData$rekomendasi
       tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
       
