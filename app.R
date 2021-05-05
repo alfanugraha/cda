@@ -34,6 +34,8 @@ driver <- dbDriver('PostgreSQL')
 dbname <- 'moodle'
 host <- 'pepstaging.duckdns.org'
 port <- '5432'
+user <- 'moodleaksara'
+password <- 'moodleaksaradbpassword'
 query <- paste0('SELECT u.firstname, u.lastname, u.email, cmlist.sectionname,cmlist.sectionid, cmlist.courseid, gi.itemname as quizname, gg.finalgrade, gi.grademax, gi.grademin, gg.timecreated, gg.timemodified
 FROM mdl_quiz AS q
 JOIN (
@@ -48,6 +50,30 @@ JOIN mdl_grade_items AS gi ON gi.iteminstance = cmlist.instance AND gi.itemmodul
 JOIN mdl_grade_grades AS gg ON gg.itemid = gi.id
 JOIN mdl_user AS u ON u.id = gg.userid
 WHERE u.username LIKE \'%\'')
+
+
+SQLCommand <- function(query){
+  on.exit(dbDisconnect(con))
+  
+  con <- dbConnect(drv = dbDriver("PostgreSQL"), 
+                   dbname=dbname, host=host, 
+                   port=port, user = user, 
+                   password = password)
+  
+  tmp <- dbGetQuery(con, query)
+}
+
+SQLWriteValues <- function(values, table){
+  on.exit(dbDisconnect(con))
+  
+  con <- dbConnect(drv = dbDriver("PostgreSQL"), 
+                   dbname=dbname, host=host, 
+                   port=port, user = user, 
+                   password = password)
+  
+  postgresqlWriteTable(con, table, values, append=TRUE, row.names=FALSE)
+  return(NULL)
+}
 
 # Define UI
 ui <- fluidPage(
@@ -82,16 +108,11 @@ server <- function(input, output, session) {
   rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
   metadata_moodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
   
-  DB <- dbConnect(
-    driver, dbname=dbname, host=host, port=port,
-    user='moodleaksara', password='moodleaksaradbpassword'
-  )
-  
-  kuis_prk <- dbGetQuery(DB, query)
+  kuis_prk <- SQLCommand(query)
   # kuis_prk <- subset(kuis_prk, select=c(firstname, lastname, email, sectionname, sectionid, courseid, quizname, finalgrade))
   
   koboData <- reactiveValues(rekomendasi = metadata_moodle, kuis = kuis_prk)
-  data <- reactiveValues(maindata=data.frame())
+  data <- reactiveValues(maindata=data.frame(), table_poin=data.frame())
   
   link_kuis <- read.table('init/link_kuis.csv', header = T, sep = ",")
   # conv <- read.table('init/conv.csv', header = T, sep = ",")
@@ -165,11 +186,14 @@ server <- function(input, output, session) {
         nKat3 <- nrow(kat3)
         add_kat3 <- ifelse(nKat3 > 0, sum(kat3$poin_cdna) / nKat3, 0)
         
-        t_graphData <- within(t_graphData, {additional<-ifelse(Kategori == "Keterampilan" , add_kat2, ifelse(Kategori == "Keterampilan", add_kat3, 0))})
+        t_graphData <- within(t_graphData, {additional<-ifelse(Kategori == "Keterampilan" , add_kat2, ifelse(Kategori == "Pengetahuan", add_kat3, 0))})
       }
       
       t_graphData$Nilai <- as.numeric( t_graphData$Nilai)
       t_graphData$total <- t_graphData$Nilai + t_graphData$additional
+      t_graphData <- within(t_graphData, {total <- ifelse(Kategori == "Keterampilan" & total >= 5 , 5, total)})
+      t_graphData <- within(t_graphData, {total <- ifelse(Kategori == "Pengetahuan" & total >= 5 , 5, total)})
+      data$table_poin <- t_graphData
       t_graphData$additional <- NULL
       
       colnames(t_graphData) <- c("Kategori", "Nilai CDNA", "Nilai Peningkatan")
@@ -180,9 +204,11 @@ server <- function(input, output, session) {
     
     output$recommendationTable <- renderDataTable({
       tempData <- data$maindata
+      table_poin <- data$table_poin 
+      userEmail <- input$userEmail
       namaKolom = colnames(tempData[1:length(tempData)])
       # filterData <- tempData[which(tempData$`profil/email` == "y.karimah@cgiar.org"), names(tempData) %in% namaKolom]
-      filterData <- tempData[which(tempData$`profil/email` == input$userEmail), names(tempData) %in% namaKolom]
+      filterData <- tempData[which(tempData$`profil/email` == userEmail), names(tempData) %in% namaKolom]
     
       indikator6.1 <- filterData %>% select (`sdm_i1/sdm_i2/q6.1.1`, `sdm_i1/sdm_i2/q6.1.2`)
       indikator6.2 <- filterData %>% select (`sdm_i1/sdm_i3/q6.2.1`, `sdm_i1/sdm_i3/q6.2.2`, `sdm_i1/sdm_i3/q6.2.3`, `sdm_i1/sdm_i3/q6.2.4`,
@@ -199,27 +225,30 @@ server <- function(input, output, session) {
                             indikator6.1, indikator6.2, indikator6.3, indikator6.4)
       numData<- as.data.frame(lapply(temp_numData[,8:(length(temp_numData))], as.numeric))
       
-      rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2)/2
-      rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5
-      rekomenPPRKN <- numData$sdm_i1.sdm_i3.q6.2.6
-      rekomenCDNA <- numData$sdm_i1.sdm_i3.q6.2.7
-      rekomenPengantar <- numData$sdm_i1.sdm_i3.q6.2.7
-      rekomenEkonomi <- (numData$sdm_i1.sdm_i3.q6.2.7 + numData$sdm_i1.sdm_i3.q6.2.8 + numData$sdm_i1.sdm_i4.q6.3.4)/3
-      rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
-      rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5)/2
-      rekomenSatLahan <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.2 + numData$sdm_i1.sdm_i4.q6.3.5)/3
-      rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6)/2
-      rekomenIntervensi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.8 + numData$sdm_i1.sdm_i4.q6.3.9)/3
-      rekomenTradeoff <- (numData$sdm_i1.sdm_i4.q6.3.10 + numData$sdm_i1.sdm_i4.q6.3.11)/2
-      rekomenHutan <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-      rekomenTani <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-      rekomenEnergi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-      rekomenTransportasi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-      rekomenLimbah <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13)/3
-      rekomenAplikasi <- (numData$sdm_i1.sdm_i3.q6.2.10 + numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/3
-      rekomenKontributor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
-      rekomenAdmin <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
-      rekomenEditor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14)/2
+      poin_add_pengetahuan <- table_poin[which(table_poin$Kategori=="Pengetahuan"),]$additional
+      poin_add_keterampilan <- table_poin[which(table_poin$Kategori=="Keterampilan"),]$additional
+      
+      rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2 + poin_add_pengetahuan)/2
+      rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5 + poin_add_pengetahuan
+      rekomenPPRKN <- numData$sdm_i1.sdm_i3.q6.2.6 + poin_add_pengetahuan
+      rekomenCDNA <- numData$sdm_i1.sdm_i3.q6.2.7 + poin_add_pengetahuan
+      rekomenPengantar <- numData$sdm_i1.sdm_i3.q6.2.7 + poin_add_pengetahuan
+      rekomenEkonomi <- (numData$sdm_i1.sdm_i3.q6.2.7 + numData$sdm_i1.sdm_i3.q6.2.8 + numData$sdm_i1.sdm_i4.q6.3.4 + poin_add_keterampilan)/3
+      rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5 + poin_add_keterampilan)/2
+      rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5 + poin_add_keterampilan)/2
+      rekomenSatLahan <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.2 + numData$sdm_i1.sdm_i4.q6.3.5 + poin_add_keterampilan)/3
+      rekomenBAU <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.6 + poin_add_keterampilan)/2
+      rekomenIntervensi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.8 + numData$sdm_i1.sdm_i4.q6.3.9 + poin_add_keterampilan)/3
+      rekomenTradeoff <- (numData$sdm_i1.sdm_i4.q6.3.10 + numData$sdm_i1.sdm_i4.q6.3.11 + poin_add_keterampilan)/2
+      rekomenHutan <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
+      rekomenTani <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
+      rekomenEnergi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
+      rekomenTransportasi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
+      rekomenLimbah <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
+      rekomenAplikasi <- (numData$sdm_i1.sdm_i3.q6.2.10 + numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/3
+      rekomenKontributor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
+      rekomenAdmin <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
+      rekomenEditor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
       
       if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==1){
         
@@ -238,6 +267,22 @@ server <- function(input, output, session) {
         
         tabelEnergi$ID <- NULL
         tabelEnergi$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelEnergi, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelEnergi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==2) {
@@ -257,6 +302,22 @@ server <- function(input, output, session) {
         
         tabelTransportasi$ID <- NULL
         tabelTransportasi$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelTransportasi, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelTransportasi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==1) {
@@ -276,6 +337,22 @@ server <- function(input, output, session) {
         
         tabelHutan$ID <- NULL
         tabelHutan$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelHutan, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelHutan, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==2) {
@@ -295,6 +372,22 @@ server <- function(input, output, session) {
         
         tabelTani$ID <- NULL
         tabelTani$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelTani, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelTani, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==3 & filterData$`profil/subsektor_002`==1) {
@@ -314,6 +407,22 @@ server <- function(input, output, session) {
         
         tabelLimbah$ID <- NULL
         tabelLimbah$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelLimbah, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelLimbah, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else if (filterData$`profil/id`==1) {
@@ -333,6 +442,22 @@ server <- function(input, output, session) {
         
         tabelAdmin$ID <- NULL
         tabelAdmin$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelAdmin, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelAdmin, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       } else {
@@ -352,6 +477,22 @@ server <- function(input, output, session) {
         
         tabelEditor$ID <- NULL
         tabelEditor$Nilai <- NULL
+        
+        link_kuis$Modul <- link_kuis$modul 
+        tblInsertMoodle <- merge(tabelEditor, link_kuis, by='Modul')
+        tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
+        
+        sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+        query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+        if(query_check == 0) {
+          KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+          NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+          SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+        } else if(query_check == 1) {
+          query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+          SQLCommand(query_update)
+        }
+        
         datatable(tabelEditor, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
         
       }
