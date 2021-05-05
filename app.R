@@ -22,10 +22,32 @@ library(httr)
 library(jsonlite)
 library(readr)
 
+library(RPostgreSQL)
+library(DBI)
+
 kobo_server_url <- "https://kf.kobotoolbox.org/"
 kc_server_url <- "https://kc.kobotoolbox.org/"
 
 form_moodle <- 327418 #Individu
+
+driver <- dbDriver('PostgreSQL')
+dbname <- 'moodle'
+host <- 'pepstaging.duckdns.org'
+port <- '5432'
+query <- paste0('SELECT u.firstname, u.lastname, u.email, cmlist.sectionname,cmlist.sectionid, cmlist.courseid, gi.itemname as quizname, gg.finalgrade, gi.grademax, gi.grademin, gg.timecreated, gg.timemodified
+FROM mdl_quiz AS q
+JOIN (
+SELECT cm.instance, cs.name as sectionname, cs.id as sectionid, c.id as courseid
+FROM mdl_course_sections as cs
+JOIN mdl_course AS c ON c.id = cs.course
+JOIN mdl_course_modules AS cm ON cm.section = cs.id
+JOIN mdl_modules AS m ON m.id = cm.module
+WHERE c.shortname LIKE \'%\' AND (cs.name LIKE \'%\' OR cs.name IS NULL) AND m.name = \'quiz\'
+) as cmlist ON cmlist.instance = q.id
+JOIN mdl_grade_items AS gi ON gi.iteminstance = cmlist.instance AND gi.itemmodule = \'quiz\' AND gi.itemtype = \'mod\'
+JOIN mdl_grade_grades AS gg ON gg.itemid = gi.id
+JOIN mdl_user AS u ON u.id = gg.userid
+WHERE u.username LIKE \'%\'')
 
 # Define UI
 ui <- fluidPage(
@@ -60,8 +82,19 @@ server <- function(input, output, session) {
   rawdata_moodle <- GET(url_moodle,authenticate("cdna2019","Icraf2019!"),progress())
   metadata_moodle <- read_csv(content(rawdata_moodle,"raw",encoding = "UTF-8"))
   
-  koboData <- reactiveValues(rekomendasi = metadata_moodle)
+  DB <- dbConnect(
+    driver, dbname=dbname, host=host, port=port,
+    user='moodleaksara', password='moodleaksaradbpassword'
+  )
+  
+  kuis_prk <- dbGetQuery(DB, query)
+  # kuis_prk <- subset(kuis_prk, select=c(firstname, lastname, email, sectionname, sectionid, courseid, quizname, finalgrade))
+  
+  koboData <- reactiveValues(rekomendasi = metadata_moodle, kuis = kuis_prk)
   data <- reactiveValues(maindata=data.frame())
+  
+  link_kuis <- read.table('init/link_kuis.csv', header = T, sep = ",")
+  # conv <- read.table('init/conv.csv', header = T, sep = ",")
   
   observeEvent(input$showButton,{
     output$titleTable1 <- renderText({ paste0("Nilai Individu") })
@@ -111,8 +144,38 @@ server <- function(input, output, session) {
       colnames(t_graphData) <- c("Kategori", "Nilai")
       rownames(t_graphData) <- 1:nrow(t_graphData)
       
+      # for quiz
+      kuisData <- koboData$kuis
+      kuisData <- kuisData[which(kuisData$sectionid %in% unique(link_kuis$sectionid)),]
+      kuisData <- kuisData[which(!is.na(kuisData$finalgrade)),]
+      kuisData <- within(kuisData, {poin_cdna<-ifelse(finalgrade > 90, 2.5, ifelse(finalgrade > 80, 1.875, ifelse(finalgrade > 70, 1.25, ifelse(finalgrade >= 60, 0.625, 0))))})
+      kuisData <- merge(kuisData, link_kuis, by=c('sectionid', 'quizname'))
+      
+      kuisFilter <- kuisData[which(kuisData$email == input$userEmail),]
+      
+      nKuisFilter <- nrow(kuisFilter)
+      if(nKuisFilter==0){
+        t_graphData$additional <- 0
+      } else {
+        kat2 <- kuisFilter[kuisFilter$Kategori=="Keterampilan",]
+        nKat2 <- nrow(kat2)
+        add_kat2 <- ifelse(nKat2 > 0, sum(kat2$poin_cdna) / nKat2, 0)
+        
+        kat3 <- kuisFilter[kuisFilter$Kategori=="Pengetahuan",]
+        nKat3 <- nrow(kat3)
+        add_kat3 <- ifelse(nKat3 > 0, sum(kat3$poin_cdna) / nKat3, 0)
+        
+        t_graphData <- within(t_graphData, {additional<-ifelse(Kategori == "Keterampilan" , add_kat2, ifelse(Kategori == "Keterampilan", add_kat3, 0))})
+      }
+      
+      t_graphData$Nilai <- as.numeric( t_graphData$Nilai)
+      t_graphData$total <- t_graphData$Nilai + t_graphData$additional
+      t_graphData$additional <- NULL
+      
+      colnames(t_graphData) <- c("Kategori", "Nilai CDNA", "Nilai Peningkatan")
+      
       datatable(t_graphData,escape = FALSE, rownames = FALSE, options = list(dom='ti')) %>%
-        formatRound(columns='Nilai', digits=2)
+        formatRound(columns=c('Nilai CDNA', 'Nilai Peningkatan'), digits=2)
     })
     
     output$recommendationTable <- renderDataTable({
