@@ -33,7 +33,7 @@ host <- "pepstaging.duckdns.org"
 port <- '5432'
 user <- 'moodleaksara'
 password <- 'moodleaksaradbpassword'
-query <- paste0('SELECT u.firstname, u.lastname, u.email, cmlist.sectionname,cmlist.sectionid, cmlist.courseid, gi.itemname as quizname, gg.finalgrade, gi.grademax, gi.grademin, gg.timecreated, gg.timemodified
+query <- paste0('SELECT u.firstname, u.lastname, u.username, cmlist.sectionname,cmlist.sectionid, cmlist.courseid, gi.itemname as quizname, gg.finalgrade, gi.grademax, gi.grademin, gg.timecreated, gg.timemodified
 FROM mdl_quiz AS q
 JOIN (
 SELECT cm.instance, cs.name as sectionname, cs.id as sectionid, c.id as courseid
@@ -111,7 +111,7 @@ server <- function(input, output, session) {
     if(!is.null(query$username)){
       data$userEmail <- query$username
     } else {
-      data$userEmail <- "sulsel22@owlymail.com"
+      data$userEmail <- "kementan_admin_pbi"
     }
   })
   
@@ -124,7 +124,7 @@ server <- function(input, output, session) {
     tempData <- koboData$rekomendasi
     tempData$`sdm_i1/sdm_i4/q6.3.7`<-NULL
     
-    tempData <- as.data.frame(tempData[129:nrow(tempData),])
+    tempData <- as.data.frame(tempData[129:nrow(tempData),]) # this line would be dangerous if the data have been truncated
     data$maindata <- tempData
     userEmail <- data$userEmail
     
@@ -171,11 +171,12 @@ server <- function(input, output, session) {
     kuisData <- within(kuisData, {poin_cdna<-ifelse(finalgrade > 90, 2.5, ifelse(finalgrade > 80, 1.875, ifelse(finalgrade > 70, 1.25, ifelse(finalgrade >= 60, 0.625, 0))))})
     kuisData <- merge(kuisData, link_kuis, by=c('sectionid', 'quizname'))
     
-    kuisFilter <- kuisData[which(kuisData$email == userEmail),]
+    kuisFilter <- kuisData[which(kuisData$username == userEmail),]
     
     nKuisFilter <- nrow(kuisFilter)
     if(nKuisFilter==0){
       t_graphData$additional <- 0
+      print('please check the number of filter')
     } else {
       kat2 <- kuisFilter[kuisFilter$Kategori=="Keterampilan",]
       nKat2 <- nrow(kat2)
