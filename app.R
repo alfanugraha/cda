@@ -48,6 +48,16 @@ JOIN mdl_grade_grades AS gg ON gg.itemid = gi.id
 JOIN mdl_user AS u ON u.id = gg.userid
 WHERE u.username LIKE \'%\'')
 
+modulBelajar <- data.frame(
+  Modul=c("Pemahaman Dasar Perubahan Iklim & Pembangunan Rendah Karbon", "Pembangunan Rendah Karbon Indonesia", "Perencanaan Pembangunan Rendah Karbon Nasional", "Penilaian Kapasitas Mandiri Pembangunan Rendah Karbon Daerah", "Pengantar Perencanaan Pembangunan Rendah Karbon Daerah", 
+          "Analisis Ekonomi Regional", "Data Satelit Energi", "Data Satelit Limbah", "Data Satelit Lahan",
+          "Skenario Business as Usual", "Skenario Pembangunan Rendah Karbon", "Analisis Trade-off",
+          "Aksi mitigasi subsektor Kehutanan & Gambut", "Aksi mitigasi subsektor Pertanian",
+          "Aksi mitigasi subsektor energi", "Aksi mitigasi subsektor transportasi",
+          "Aksi mitigasi sektor pengelolaan limbah",
+          "Pengenalan aplikasi AKSARA", 
+          "Penggunaan aksara untuk kontributor teknis provinsi - kab/kota", "Penggunaan aksara Admin provinsi", "Penggunaan aksara untuk editor")
+)
 
 SQLCommand <- function(query){
   on.exit(dbDisconnect(con))
@@ -228,11 +238,13 @@ server <- function(input, output, session) {
     poin_add_pengetahuan <- table_poin[which(table_poin$Kategori=="Pengetahuan"),]$additional
     poin_add_keterampilan <- table_poin[which(table_poin$Kategori=="Keterampilan"),]$additional
     
+    # Pengetahuan
     rekomenIklim <- (numData$sdm_i1.sdm_i3.q6.2.1 + numData$sdm_i1.sdm_i3.q6.2.2 + poin_add_pengetahuan)/2
     rekomenPRKI <- numData$sdm_i1.sdm_i3.q6.2.5 + poin_add_pengetahuan
     rekomenPPRKN <- numData$sdm_i1.sdm_i3.q6.2.6 + poin_add_pengetahuan
     rekomenCDNA <- numData$sdm_i1.sdm_i3.q6.2.7 + poin_add_pengetahuan
     rekomenPengantar <- numData$sdm_i1.sdm_i3.q6.2.7 + poin_add_pengetahuan
+    # Keterampilan
     rekomenEkonomi <- (numData$sdm_i1.sdm_i3.q6.2.7 + numData$sdm_i1.sdm_i3.q6.2.8 + numData$sdm_i1.sdm_i4.q6.3.4 + poin_add_keterampilan)/3
     rekomenSatEnergi <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5 + poin_add_keterampilan)/2
     rekomenSatLimbah <- (numData$sdm_i1.sdm_i4.q6.3.1 + numData$sdm_i1.sdm_i4.q6.3.5 + poin_add_keterampilan)/2
@@ -246,256 +258,90 @@ server <- function(input, output, session) {
     rekomenTransportasi <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
     rekomenLimbah <- (numData$sdm_i1.sdm_i3.q6.2.9 + numData$sdm_i1.sdm_i4.q6.3.12 + numData$sdm_i1.sdm_i4.q6.3.13 + poin_add_keterampilan)/3
     rekomenAplikasi <- (numData$sdm_i1.sdm_i3.q6.2.10 + numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/3
+    # Users
     rekomenKontributor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
     rekomenAdmin <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
     rekomenEditor <- (numData$sdm_i1.sdm_i4.q6.3.3 + numData$sdm_i1.sdm_i4.q6.3.14 + poin_add_keterampilan)/2
     
-    if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==1){
-      
-      modulEnergi <- read_excel("init/modul.xlsx", sheet = "Energi")
-      nilaiEnergi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenEnergi, rekomenAplikasi, rekomenKontributor))
-      tabelEnergi <- cbind(modulEnergi, nilaiEnergi)
-      tabelEnergi <- cbind(Kursus = rownames(tabelEnergi), tabelEnergi)
-      colnames(tabelEnergi) <- c("ID", "Modul", "Nilai")
-      rownames(tabelEnergi) <- 1:nrow(tabelEnergi)
-      tabelEnergi$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelEnergi)){
-        eval(parse(text=paste0("tabelEnergi <- within(tabelEnergi, {Rekomendasi<-ifelse(ID=='", as.character(tabelEnergi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelEnergi$ID <- NULL
-      tabelEnergi$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelEnergi, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelEnergi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==2) {
-      
-      modulTransportasi <- read_excel("init/modul.xlsx", sheet = "Energi_Trans")
-      nilaiTransportasi <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatEnergi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTransportasi, rekomenAplikasi, rekomenKontributor))
-      tabelTransportasi <- cbind(modulTransportasi, nilaiTransportasi)
-      tabelTransportasi <- cbind(Kursus = rownames(tabelTransportasi), tabelTransportasi)
-      colnames(tabelTransportasi) <- c("ID", "Modul", "Nilai")
-      rownames(tabelTransportasi) <- 1:nrow(tabelTransportasi)
-      tabelTransportasi$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelTransportasi)){
-        eval(parse(text=paste0("tabelTransportasi <- within(tabelTransportasi, {Rekomendasi<-ifelse(ID=='", as.character(tabelTransportasi$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelTransportasi$ID <- NULL
-      tabelTransportasi$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelTransportasi, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelTransportasi, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==1) {
-      
-      modulHutan<- read_excel("init/modul.xlsx", sheet = "Lahan_Hutan")
-      nilaiHutan <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenHutan, rekomenAplikasi, rekomenKontributor))
-      tabelHutan <- cbind(modulHutan, nilaiHutan)
-      tabelHutan <- cbind(Kursus = rownames(tabelHutan), tabelHutan)
-      colnames(tabelHutan) <- c("ID", "Modul", "Nilai")
-      rownames(tabelHutan) <- 1:nrow(tabelHutan)
-      tabelHutan$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelHutan)){
-        eval(parse(text=paste0("tabelHutan <- within(tabelHutan, {Rekomendasi<-ifelse(ID=='", as.character(tabelHutan$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelHutan$ID <- NULL
-      tabelHutan$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelHutan, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelHutan, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==2 & filterData$`profil/subsektor_001`==2) {
-      
-      modulTani<- read_excel("init/modul.xlsx", sheet = "Lahan_Tani")
-      nilaiTani <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLahan, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenTani, rekomenAplikasi, rekomenKontributor))
-      tabelTani <- cbind(modulTani, nilaiTani)
-      tabelTani <- cbind(Kursus = rownames(tabelTani), tabelTani)
-      colnames(tabelTani) <- c("ID", "Modul", "Nilai")
-      rownames(tabelTani) <- 1:nrow(tabelTani)
-      tabelTani$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelTani)){
-        eval(parse(text=paste0("tabelTani <- within(tabelTani, {Rekomendasi<-ifelse(ID=='", as.character(tabelTani$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelTani$ID <- NULL
-      tabelTani$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelTani, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelTani, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==2 & filterData$`profil/sektor`==3 & filterData$`profil/subsektor_002`==1) {
-      
-      modulLimbah<- read_excel("init/modul.xlsx", sheet = "Limbah")
-      nilaiLimbah <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenSatLimbah, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenLimbah, rekomenAplikasi, rekomenKontributor))
-      tabelLimbah <- cbind(modulLimbah, nilaiLimbah)
-      tabelLimbah <- cbind(Kursus = rownames(tabelLimbah), tabelLimbah)
-      colnames(tabelLimbah) <- c("ID", "Modul", "Nilai")
-      rownames(tabelLimbah) <- 1:nrow(tabelLimbah)
-      tabelLimbah$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelLimbah)){
-        eval(parse(text=paste0("tabelLimbah <- within(tabelLimbah, {Rekomendasi<-ifelse(ID=='", as.character(tabelLimbah$ID[i]) , "' & Nilai<3, 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelLimbah$ID <- NULL
-      tabelLimbah$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelLimbah, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelLimbah, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else if (filterData$`profil/id`==1) {
-      
-      modulAdmin<- read_excel("init/modul.xlsx", sheet = "Admin")
-      nilaiAdmin <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenAdmin))
-      tabelAdmin <- cbind(modulAdmin, nilaiAdmin)
-      tabelAdmin <- cbind(Kursus = rownames(tabelAdmin), tabelAdmin)
-      colnames(tabelAdmin) <- c("ID", "Modul", "Nilai")
-      rownames(tabelAdmin) <- 1:nrow(tabelAdmin)
-      tabelAdmin$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelAdmin)){
-        eval(parse(text=paste0("tabelAdmin <- within(tabelAdmin, {Rekomendasi<-ifelse(ID=='", as.character(tabelAdmin$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelAdmin$ID <- NULL
-      tabelAdmin$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelAdmin, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelAdmin, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
-    } else {
-      
-      modulEditor<- read_excel("init/modul.xlsx", sheet = "Editor")
-      nilaiEditor <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar, rekomenEkonomi, rekomenBAU, rekomenIntervensi, rekomenTradeoff, rekomenAplikasi, rekomenEditor))
-      tabelEditor <- cbind(modulEditor, nilaiEditor)
-      tabelEditor <- cbind(Kursus = rownames(tabelEditor), tabelEditor)
-      colnames(tabelEditor) <- c("ID", "Modul", "Nilai")
-      rownames(tabelEditor) <- 1:nrow(tabelEditor)
-      tabelEditor$Rekomendasi <- "Tidak ada rekomendasi"
-      
-      ###Define the recommendation of each indicator####
-      for (i in 1:nrow(tabelEditor)){
-        eval(parse(text=paste0("tabelEditor <- within(tabelEditor, {Rekomendasi<-ifelse(ID=='", as.character(tabelEditor$ID[i]) , "' & Nilai<3 , 'Perlu mempelajari modul', Rekomendasi)})")))
-      }
-      
-      tabelEditor$ID <- NULL
-      tabelEditor$Nilai <- NULL
-      
-      link_kuis$Modul <- link_kuis$modul 
-      tblInsertMoodle <- merge(tabelEditor, link_kuis, by='Modul')
-      tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Perlu mempelajari modul"), ]
-      
-      sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
-      query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
-      if(query_check == 0) {
-        KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
-        NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
-        SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
-      } else if(query_check == 1) {
-        query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
-        SQLCommand(query_update)
-      }
-      
-      datatable(tabelEditor, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
-      
+    
+    nilaiRekomen <- data.frame(rbind(rekomenIklim, rekomenPRKI, rekomenPPRKN, rekomenCDNA, rekomenPengantar,
+                                     rekomenEkonomi, rekomenSatEnergi, rekomenSatLimbah, rekomenSatLahan, 
+                                     rekomenBAU, rekomenIntervensi, rekomenTradeoff,
+                                     rekomenHutan, rekomenTani, rekomenEnergi, rekomenTransportasi, rekomenLimbah, rekomenAplikasi,
+                                     rekomenKontributor, rekomenAdmin, rekomenEditor))
+    tabelRekomen <- cbind(modulBelajar, nilaiRekomen)
+    tabelRekomen <- cbind(Kursus = rownames(tabelRekomen), tabelRekomen)
+    colnames(tabelRekomen) <- c("ID", "Modul", "Nilai")
+    rownames(tabelRekomen) <- 1:nrow(tabelRekomen)
+    tabelRekomen$Rekomendasi <- "N/A"
+    
+    # pengguna umum
+    if(filterData$`profil/id`==3){
+      tabelRekomen <- within(tabelRekomen, { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
     }
+    
+    # admin
+    if(filterData$`profil/id`==1){
+      tabelRekomen[c(1:6, 10:12, 18, 20),] <- within(tabelRekomen[c(1:6, 10:12, 18, 20),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+    }
+    
+    # kontributor teknis
+    if(filterData$`profil/id`==2){
+      tabelRekomen[c(1:6, 10:12, 18, 19),] <- within(tabelRekomen[c(1:6, 10:12, 18, 19),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+    }
+    
+    # editor
+    if(filterData$`profil/id`==4){
+      tabelRekomen[c(1:6, 10:12, 18, 21),] <- within(tabelRekomen[c(1:6, 10:12, 18, 21),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+    }
+    
+    if(!is.na(filterData$`profil/subsektor`)){
+      # limbah
+      if(filterData$`profil/sektor`==3){
+        tabelRekomen[c(8, 17),] <- within(tabelRekomen[c(8, 17),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+      }
+      
+      # energi
+      if(filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==1){
+        tabelRekomen[c(7, 15),] <- within(tabelRekomen[c(7, 15),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+      }
+      
+      # transportasi
+      if(filterData$`profil/sektor`==1 & filterData$`profil/subsektor`==2){
+        tabelRekomen[c(7, 16),] <- within(tabelRekomen[c(7, 16),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+      }
+      
+      # lahan
+      if(filterData$`profil/sektor`==2 & filterData$`profil/subsektor`==2){
+        tabelRekomen[c(9, 13),] <- within(tabelRekomen[c(9, 13),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+      }
+      
+      # pertanian
+      if(filterData$`profil/sektor`==2 & filterData$`profil/subsektor`==2){
+        tabelRekomen[c(9, 14),] <- within(tabelRekomen[c(9, 14),], { Rekomendasi <- ifelse(Nilai < 3, 'Sangat direkomendasikan', Rekomendasi) })
+      }
+    }
+    
+    tabelRekomen$ID <- NULL
+    # tabelRekomen$Nilai <- NULL
+    
+    link_kuis$Modul <- link_kuis$modul 
+    tblInsertMoodle <- merge(tabelRekomen, link_kuis, by='Modul')
+    tblInsertMoodle <- tblInsertMoodle[which(tblInsertMoodle$Rekomendasi=="Sangat direkomendasikan"), ]
+    
+    sectid<-paste(tblInsertMoodle$sectionid, collapse=",")
+    query_check <- SQLCommand(paste0("SELECT COUNT(1) FROM mdl_course_list_cdna WHERE username='", userEmail, "'"))
+    if(query_check == 0) {
+      KeyPlusOne <- sum(SQLCommand('SELECT count(*) FROM mdl_course_list_cdna'), 1)
+      NewRecord <- data.frame(id=KeyPlusOne, username=userEmail, sectionid=sectid)
+      SQLWriteValues(NewRecord, 'mdl_course_list_cdna')
+    } else if(query_check == 1) {
+      query_update<-paste0("UPDATE mdl_course_list_cdna SET sectionid = '", sectid, "' WHERE username = '", userEmail, "'")
+      SQLCommand(query_update)
+    }
+    
+    datatable(tabelRekomen, escape = FALSE, rownames = FALSE, options = list(pageLength = 15, dom='ti'))
+    
   })
   # })
 }
