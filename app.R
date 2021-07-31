@@ -47,7 +47,6 @@ ui <- fluidPage(
                       h2(textOutput("titleTable2")),
                       # withSpinner(dataTableOutput("recommendationTable")),
                       dataTableOutput("recommendationTable")
-                      # downloadButton('downloadResults', 'Unduh Hasil', style="color: #fff; background-color: #00a65a; border-color: #008d4c")
              )
   ),
   tags$style(type="text/css", ".navbar-nav {float: right; margin: 0;}")
